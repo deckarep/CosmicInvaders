@@ -1,0 +1,143 @@
+#------------------------------------------
+WindowTitle=Cosmic Invaders
+FontMain=data/font_big.mz
+FontMainKerning=-2
+FontMainRed=data/font_big_red.mz
+FontMainRedKerning=-2
+FontSmall=data/font_small.mz
+FontSmallKerning=-1
+FontSmallRed=data/font_small_red.mz
+FontSmallRedKerning=-1
+TowerBaseline=213
+ButtonSpacing=20
+TimestepThreshold=0.02
+TimeBetweenWaves=2.5
+#------------------------------------------
+StartingHealth=25
+StartingMoney=550
+#------------------------------------------
+Tower1.Name=Laser Turret
+Tower1.Description=Quick-firing vertical defense
+Tower1.Value=140
+Tower1.Health=5
+Tower1.Radius=7
+Tower1.Sprite=data/turret1.sz
+Tower1.Width=19
+Tower1.FreqBase=1.6
+Tower1.DamageBase=2
+Tower1.Available=1
+Tower1.Upgrades=2
+#------------------------------------------
+Tower1.Upgrade1.Name=Rapid Reload
+Tower1.Upgrade1.Description=Increased rate of fire!
+Tower1.Upgrade1.Levels=3
+Tower1.Upgrade1.Level1.Value=100
+Tower1.Upgrade1.Level1.Icon=5
+Tower1.Upgrade1.Level1.FreqMod=-0.4
+Tower1.Upgrade1.Level2.Value=150
+Tower1.Upgrade1.Level2.Icon=6
+Tower1.Upgrade1.Level2.FreqMod=-0.4
+Tower1.Upgrade1.Level3.Value=200
+Tower1.Upgrade1.Level3.Icon=7
+Tower1.Upgrade1.Level3.FreqMod=-0.4
+#------------------------------------------
+Tower1.Upgrade2.Name=Viper Pack
+Tower1.Upgrade2.Description=Heat-seeking missiles!
+Tower1.Upgrade2.Levels=1
+Tower1.Upgrade2.Level1.Value=600
+Tower1.Upgrade2.Level1.Icon=8
+Tower1.Upgrade2.Level1.MissileFreq=5.0
+Tower1.Upgrade2.Level1.MissileDamage=2
+#------------------------------------------
+Tower2.Name=Missile Battery
+Tower2.Description=Heat-seeking missile turret
+Tower2.Value=350
+Tower2.Health=12
+Tower2.Radius=9
+Tower2.Sprite=data/turret2.sz
+Tower2.Width=24
+Tower2.FreqBase=4.6
+Tower2.DamageBase=2
+Tower2.DamageSplashBase=1
+Tower2.SplashRadius=9.0
+Tower2.Available=1
+Tower2.Upgrades=3
+#------------------------------------------
+Tower2.Upgrade1.Name=Rapid Reload
+Tower2.Upgrade1.Description=Increased rate of fire!
+Tower2.Upgrade1.Levels=3
+Tower2.Upgrade1.Level1.Value=150
+Tower2.Upgrade1.Level1.Icon=5
+Tower2.Upgrade1.Level1.FreqMod=-0.8
+Tower2.Upgrade1.Level2.Value=350
+Tower2.Upgrade1.Level2.Icon=6
+Tower2.Upgrade1.Level2.FreqMod=-0.8
+Tower2.Upgrade1.Level3.Value=450
+Tower2.Upgrade1.Level3.Icon=7
+Tower2.Upgrade1.Level3.FreqMod=-0.8
+#------------------------------------------
+Tower2.Upgrade2.Name=Shrapnel Blast
+Tower2.Upgrade2.Description=Increased splash radius!
+Tower2.Upgrade2.Levels=3
+Tower2.Upgrade2.Level1.Value=150
+Tower2.Upgrade2.Level1.Icon=10
+Tower2.Upgrade2.Level1.SplashMod=5.0
+Tower2.Upgrade2.Level2.Value=350
+Tower2.Upgrade2.Level2.Icon=11
+Tower2.Upgrade2.Level2.SplashMod=5.0
+Tower2.Upgrade2.Level3.Value=450
+Tower2.Upgrade2.Level3.Icon=12
+Tower2.Upgrade2.Level3.SplashMod=5.0
+#------------------------------------------
+Tower2.Upgrade3.Name=Twin Missiles
+Tower2.Upgrade3.Description=Two for the price of one!
+Tower2.Upgrade3.Levels=1
+Tower2.Upgrade3.Level1.Value=800
+Tower2.Upgrade3.Level1.Icon=9
+#------------------------------------------
+Tower3.Name=Spark Tower
+Tower3.Description=Slow-charging shock device
+Tower3.Value=550
+Tower3.Health=9
+Tower3.Radius=6
+Tower3.Sprite=data/turret3.sz
+Tower3.Width=18
+Tower3.FreqBase=0.5
+Tower3.DamageBase=3
+Tower3.RangeGrowth=40
+Tower3.RangeMax=120
+Tower3.Available=1
+Tower3.Upgrades=1
+#------------------------------------------
+Tower3.Upgrade1.Name=Gigacapacitors
+Tower3.Upgrade1.Description=Increased damage!
+Tower3.Upgrade1.Levels=3
+Tower3.Upgrade1.Level1.Value=150
+Tower3.Upgrade1.Level1.Icon=13
+Tower3.Upgrade1.Level1.DamageMod=2
+Tower3.Upgrade1.Level2.Value=350
+Tower3.Upgrade1.Level2.Icon=14
+Tower3.Upgrade1.Level2.DamageMod=3
+Tower3.Upgrade1.Level3.Value=450
+Tower3.Upgrade1.Level3.Icon=15
+Tower3.Upgrade1.Level3.DamageMod=4
+#------------------------------------------
+# Invaders!
+Invader1.Sprite=data/invader1.sz
+Invader1.Value=20
+Invader1.Health=3
+Invader1.HealthIncrease=0.8
+Invader1.Size=8.0
+#------------------------------------------
+Wave1SpeedBase=14.0
+Wave1SpeedIncrease=1.25
+Wave1SpeedMax=28.0
+#------------------------------------------
+MasterOrb.Health=170.0
+#------------------------------------------
+LaserSpeedBase=280.0
+MissileSpeedBase=100.0
+MissileSteeringResponse=0.3
+MissileSteeringMax=6.5
+
+MissileLife=4.0
