@@ -62,11 +62,11 @@ pub fn main() !void {
     std.debug.print("All your {s} are belong to us.\n", .{"codebase"});
 
     for (mzFiles) |path| {
-        try genMZFile(path);
+        try genMZFile(path, alloc);
     }
 }
 
-fn genMZFile(path: [:0]const u8) !void {
+fn genMZFile(path: [:0]const u8, allocator: std.mem.Allocator) !void {
     const f = c.gzopen(path, "rb");
     if (f == null) {
         @panic("failed to open file!");
@@ -76,7 +76,7 @@ fn genMZFile(path: [:0]const u8) !void {
     const height = gzgetshort(f);
 
     var img = try zigimg.Image.create(
-        alloc,
+        allocator,
         @intCast(width),
         @intCast(height),
         .rgba32,
