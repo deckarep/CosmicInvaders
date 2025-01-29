@@ -79,7 +79,7 @@ fn genMZFile(path: [:0]const u8) !void {
         alloc,
         @intCast(width),
         @intCast(height),
-        .rgb24,
+        .rgba32,
     );
     defer img.deinit();
 
@@ -89,9 +89,14 @@ fn genMZFile(path: [:0]const u8) !void {
             const g: u8 = @intCast(c.gzgetc(f));
             const b: u8 = @intCast(c.gzgetc(f));
 
+            // Although these assets use rgb24 colors, we generate rgba32 colors
+            // and when we observe the hot-pink common key-out color of games from
+            // this era, we just set the alpha to 0 otherwise it remains 255.
+            const a: u8 = if ((r == 255) and (g == 0) and (b == 255)) 0 else 255;
+
             // Ensure we index correctly within bounds
             const index = (y * @as(usize, @intCast(height))) + x;
-            img.pixels.rgb24[index] = zigimg.color.Rgb24.initRgb(r, g, b);
+            img.pixels.rgba32[index] = zigimg.color.Rgba32.initRgba(r, g, b, a);
         }
     }
 
