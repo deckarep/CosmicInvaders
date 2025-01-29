@@ -1,5 +1,9 @@
 # Cosmic Invaders
 
+<p align="center">
+    <img src="https://github.com/deckarep/CosmicInvaders/blob/main/static/images/screenshot.png">
+</p>
+
 These assets come from an old Allegro ~4.2 game and are in zlib compressed format. Two types of bitmap files
 exist: `.mz` and `.sz` files. The `.mz` variant are just simple bitmap graphics usually containing no animation
 frame data and are just meant to largely convey RGB static images.
