@@ -75,6 +75,8 @@ pub fn main() !void {
 
 fn genBitmapFile(path: [:0]const u8, allocator: std.mem.Allocator) !void {
     const f = c.gzopen(path, "rb");
+    defer _ = c.gzclose(f);
+
     if (f == null) {
         @panic("failed to open file!");
     }
