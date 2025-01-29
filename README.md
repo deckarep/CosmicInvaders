@@ -1,7 +1,7 @@
 # Cosmic Invaders
 
 <p align="center">
-    <img src="https://github.com/deckarep/CosmicInvaders/blob/main/static/images/screenshot.png">
+    <img src="https://raw.githubusercontent.com/deckarep/CosmicInvaders/refs/heads/main/screenshot.png">
 </p>
 
 These assets come from an old Allegro ~4.2 game and are in zlib compressed format. Two types of bitmap files
