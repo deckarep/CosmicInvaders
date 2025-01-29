@@ -7,9 +7,8 @@ const alloc = gpa.allocator();
 
 // Note: requires Zig 0.14.0-dev or higher so far.
 
-const KeyOutColors = [_]zigimg.color.Rgb24{
-    zigimg.color.Rgb24.initRgb(255, 0, 255), // hot-pink
-};
+const KeyOutHotPink = zigimg.color.Rgb24.initRgb(255, 0, 255);
+const KeyOutFontBlue = zigimg.color.Rgb24.initRgb(141, 192, 219);
 
 const mzFiles: []const [:0]const u8 = &.{
     // Single bitmaps
@@ -61,6 +60,10 @@ fn gzgetshort(file: c.gzFile) i32 {
     return (c.gzgetc(file) << 8) | a;
 }
 
+fn color24Eq(a: zigimg.color.Rgb24, b: zigimg.color.Rgb24) bool {
+    return a.r == b.r and a.g == b.g and a.b == b.b;
+}
+
 pub fn main() !void {
     // Prints to stderr (it's a shortcut based on `std.io.getStdErr()`)
     std.debug.print("All your {s} are belong to us.\n", .{"codebase"});
@@ -93,12 +96,18 @@ fn genBitmapFile(path: [:0]const u8, allocator: std.mem.Allocator) !void {
             const g: u8 = @intCast(c.gzgetc(f));
             const b: u8 = @intCast(c.gzgetc(f));
 
+            const color = zigimg.color.Rgb24.initRgb(r, g, b);
+
             // Although these assets use rgb24 colors, we generate rgba32 colors
             // and when we observe the key-out colors (like hot-pink) of games from
             // this era, we just set the alpha to 0 otherwise it remains 255.
             var a: u8 = 255;
-            for (KeyOutColors) |clr| {
-                a = if ((r == clr.r) and (g == clr.g) and (b == clr.b)) 0 else a;
+
+            // Check for KeyOut colors
+            if (color24Eq(color, KeyOutHotPink) or
+                (color24Eq(color, KeyOutFontBlue) and std.mem.startsWith(u8, path, "data/font_")))
+            {
+                a = 0; // Knock out color by setting alpha to 0
             }
 
             // Ensure we index correctly within bounds
