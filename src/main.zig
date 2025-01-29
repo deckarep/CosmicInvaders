@@ -7,6 +7,10 @@ const alloc = gpa.allocator();
 
 // Note: requires Zig 0.14.0-dev or higher so far.
 
+const KeyOutColors = [_]zigimg.color.Rgb24{
+    zigimg.color.Rgb24.initRgb(255, 0, 255), // hot-pink
+};
+
 const mzFiles: []const [:0]const u8 = &.{
     // Single bitmaps
     "data/bg.mz",
@@ -62,11 +66,11 @@ pub fn main() !void {
     std.debug.print("All your {s} are belong to us.\n", .{"codebase"});
 
     for (mzFiles) |path| {
-        try genMZFile(path, alloc);
+        try genBitmapFile(path, alloc);
     }
 }
 
-fn genMZFile(path: [:0]const u8, allocator: std.mem.Allocator) !void {
+fn genBitmapFile(path: [:0]const u8, allocator: std.mem.Allocator) !void {
     const f = c.gzopen(path, "rb");
     if (f == null) {
         @panic("failed to open file!");
@@ -90,9 +94,12 @@ fn genMZFile(path: [:0]const u8, allocator: std.mem.Allocator) !void {
             const b: u8 = @intCast(c.gzgetc(f));
 
             // Although these assets use rgb24 colors, we generate rgba32 colors
-            // and when we observe the hot-pink common key-out color of games from
+            // and when we observe the key-out colors (like hot-pink) of games from
             // this era, we just set the alpha to 0 otherwise it remains 255.
-            const a: u8 = if ((r == 255) and (g == 0) and (b == 255)) 0 else 255;
+            var a: u8 = 255;
+            for (KeyOutColors) |clr| {
+                a = if ((r == clr.r) and (g == clr.g) and (b == clr.b)) 0 else a;
+            }
 
             // Ensure we index correctly within bounds
             const index = (y * @as(usize, @intCast(height))) + x;
