@@ -1,6 +1,11 @@
 const std = @import("std");
+const state = @import("gamestate.zig");
+const conf = @import("conf.zig");
 const zigimg = @import("zigimg");
+const hive = @import("hive.zig");
 const c = @import("cdefs.zig").c;
+
+// Window includes monitor.
 
 var gpa = std.heap.GeneralPurposeAllocator(.{}){};
 const alloc = gpa.allocator();
@@ -64,10 +69,164 @@ fn color24Eq(a: zigimg.color.Rgb24, b: zigimg.color.Rgb24) bool {
     return a.r == b.r and a.g == b.g and a.b == b.b;
 }
 
+var background: c.Texture = undefined;
+var invader1: c.Texture = undefined;
+var turret2: c.Texture = undefined;
+
 pub fn main() !void {
     // Prints to stderr (it's a shortcut based on `std.io.getStdErr()`)
     std.debug.print("All your {s} are belong to us.\n", .{"codebase"});
 
+    //try regenAllBitmaps();
+
+    c.SetConfigFlags(c.FLAG_VSYNC_HINT | c.FLAG_WINDOW_RESIZABLE);
+    c.InitWindow(conf.WIN_WIDTH, conf
+        .WIN_HEIGHT, "Cosmic Invaders");
+    c.InitAudioDevice();
+    c.SetTargetFPS(60);
+    defer c.CloseWindow();
+
+    try loadAssets();
+    defer unloadAssets();
+
+    state.mGame = state.GameState.init(alloc);
+    defer state.mGame.deinit();
+
+    while (!c.WindowShouldClose()) {
+        try update();
+        try draw();
+    }
+}
+
+fn loadAssets() !void {
+    background = c.LoadTexture("data/bg.mz.png");
+    invader1 = c.LoadTexture("data/invader1.sz.png");
+    turret2 = c.LoadTexture("data/turret2.mz.png");
+}
+
+fn unloadAssets() void {
+    defer c.UnloadTexture(background);
+    defer c.UnloadTexture(invader1);
+    defer c.UnloadTexture(turret2);
+}
+
+fn update() !void {
+    // Hive
+    try state.mGame.mHive.update();
+
+    // Enemy projectiles
+    var len = state.mGame.mEnemyProjectiles.items.len;
+    while (len > 0) : (len -= 1) {
+        var currProj = &state.mGame.mEnemyProjectiles.items[len - 1];
+        currProj.update();
+        if (currProj.mY >= conf.WIN_HEIGHT) {
+            _ = state.mGame.mEnemyProjectiles.swapRemove(len - 1);
+        }
+    }
+
+    // Bump ticks.
+    state.mGame.mTicks += 1;
+}
+
+fn draw() !void {
+    c.BeginDrawing();
+    defer c.EndDrawing();
+
+    drawTextureScaled(0, 0, background, 2.0);
+    drawTextureScaled(50, 10, invader1, 2.0);
+    drawTextureScaled(320, 394, turret2, 2.0);
+
+    // Invaders
+    for (state.mGame.mHive.mInvaders.items) |inv| {
+        drawTextureScaled(inv.mX, inv.mY, invader1, 2.0);
+    }
+
+    // Enemy projectiles
+    for (state.mGame.mEnemyProjectiles.items) |prj| {
+        c.DrawCircle(prj.mX, prj.mY, 4, c.RED);
+    }
+
+    // lightening strike
+    drawLighteningStrike(10, 10, 300, 400);
+
+    c.DrawRectangle(8, conf.WIN_HEIGHT - 20, 80, 40, c.BLACK);
+    c.DrawFPS(10, conf.WIN_HEIGHT - 20);
+}
+
+fn drawLighteningStrike(fromX: i32, fromY: i32, toX: i32, toY: i32) void {
+    const mainColor = c.WHITE;
+    const pixelSize = 1;
+    const pixelVariationSize = 1;
+
+    var currentX: i32 = fromX;
+    var currentY: i32 = fromY;
+
+    const end = c.Vector2{ .x = @floatFromInt(toX), .y = @floatFromInt(toY) };
+
+    while (currentX != toX or currentY != toY) {
+        var smallestDistance: f32 = 2000.00;
+        var bestX: i32 = currentX;
+        var bestY: i32 = currentY;
+
+        // Generate possible pairs.
+        for (0..4) |_| {
+            const tmpX = c.GetRandomValue(currentX - pixelVariationSize, currentX + pixelVariationSize);
+            const tmpY = c.GetRandomValue(currentY - pixelVariationSize, currentY + pixelVariationSize);
+
+            const candidate = c.Vector2{ .x = @floatFromInt(tmpX), .y = @floatFromInt(tmpY) };
+            const dist = c.Vector2Distance(candidate, end);
+
+            if (dist < smallestDistance) {
+                smallestDistance = dist;
+                bestX = tmpX;
+                bestY = tmpY;
+            }
+        }
+
+        currentX = bestX;
+        currentY = bestY;
+
+        c.DrawRectangle(currentX - pixelSize, currentY, pixelSize, pixelSize, c.BLUE);
+        c.DrawRectangle(currentX, currentY, pixelSize, pixelSize, mainColor);
+        c.DrawRectangle(currentX + pixelSize, currentY, pixelSize, pixelSize, c.BLUE);
+    }
+
+    // Draw start
+    c.DrawRectangle(fromX - pixelSize, fromY, pixelSize, pixelSize, c.BLUE);
+    c.DrawRectangle(fromX, fromY, pixelSize, pixelSize, mainColor);
+    c.DrawRectangle(fromX + pixelSize, fromY, pixelSize, pixelSize, c.BLUE);
+
+    // Draw end
+    c.DrawRectangle(toX - pixelSize, toY, pixelSize, pixelSize, c.BLUE);
+    c.DrawRectangle(toX, toY, pixelSize, pixelSize, mainColor);
+    c.DrawRectangle(toX + toY, currentY, pixelSize, pixelSize, c.BLUE);
+}
+
+fn drawTextureScaled(x: i32, y: i32, texture: c.Texture, scale: f32) void {
+    const src = c.Rectangle{
+        .x = 0,
+        .y = 0,
+        .width = @floatFromInt(texture.width),
+        .height = @floatFromInt(texture.height),
+    };
+    const dst = c.Rectangle{
+        .x = @floatFromInt(x),
+        .y = @floatFromInt(y),
+        .width = @as(f32, @floatFromInt(texture.width)) * scale,
+        .height = @as(f32, @floatFromInt(texture.height)) * scale,
+    };
+
+    c.DrawTexturePro(
+        texture,
+        src,
+        dst,
+        c.Vector2{ .x = 0, .y = 0 },
+        0,
+        c.WHITE,
+    );
+}
+
+fn regenAllBitmaps() !void {
     for (mzFiles) |path| {
         try genBitmapFile(path, alloc);
     }

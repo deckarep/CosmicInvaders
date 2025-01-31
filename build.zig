@@ -25,6 +25,15 @@ pub fn build(b: *std.Build) void {
     // Link Zlib dep, using the systems (homebrew installed btw)
     exe.linkSystemLibrary("zlib");
 
+    exe.addObjectFile(b.path("libs/raylib-5.5_macos/lib/libraylib.a"));
+    exe.addIncludePath(b.path("libs/raylib-5.5_macos/include"));
+
+    exe.linkFramework("CoreVideo");
+    exe.linkFramework("IOKit");
+    exe.linkFramework("Cocoa");
+    exe.linkFramework("GLUT");
+    exe.linkFramework("OpenGL");
+
     // Link C
     exe.linkSystemLibrary("c");
 
