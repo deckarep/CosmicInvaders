@@ -3,6 +3,8 @@ const state = @import("gamestate.zig");
 const conf = @import("conf.zig");
 const c = @import("cdefs.zig").c;
 
+pub const HiveBoundsMargin = 10;
+
 pub const HiveState = enum {
     Scanning, // horizontal movement in either direction (left or right)
     Descending, // ticking closer to player
@@ -23,8 +25,9 @@ pub const Hive = struct {
     const Self = @This();
 
     pub fn init(allocator: std.mem.Allocator) Self {
+        // Create the invaders.
         var invaders = std.ArrayList(Invader).init(allocator);
-        invaders.append(Invader{ .mY = 20 }) catch unreachable;
+        invaders.append(Invader{ .mX = 40, .mY = 20 }) catch unreachable;
 
         return Self{
             .mInvaders = invaders,
@@ -38,13 +41,13 @@ pub const Hive = struct {
     // TODO: some kind of functions to initialize the invader count.
 
     pub fn update(self: *Self) !void {
-        if (state.mGame.mTicks % 2 != 0) return;
+        //if (state.mGame.mTicks % 2 != 0) return;
 
         switch (self.mState) {
             .Scanning => {
                 for (self.mInvaders.items) |*inv| {
                     inv.mX += self.mHorizontalSpeed * self.mDirection;
-                    if (inv.mX > conf.WIN_WIDTH or inv.mX < 0) {
+                    if (inv.mX > (conf.WIN_WIDTH - HiveBoundsMargin) or inv.mX < HiveBoundsMargin) {
                         self.mDescendCountdown = conf.DescendCountdown;
                         self.mDirection *= -1;
                         self.mState = .Descending;

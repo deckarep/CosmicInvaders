@@ -3,6 +3,7 @@ const state = @import("gamestate.zig");
 const conf = @import("conf.zig");
 const zigimg = @import("zigimg");
 const hive = @import("hive.zig");
+const txtrs = @import("textures.zig");
 const c = @import("cdefs.zig").c;
 
 // Window includes monitor.
@@ -80,8 +81,7 @@ pub fn main() !void {
     //try regenAllBitmaps();
 
     c.SetConfigFlags(c.FLAG_VSYNC_HINT | c.FLAG_WINDOW_RESIZABLE);
-    c.InitWindow(conf.WIN_WIDTH, conf
-        .WIN_HEIGHT, "Cosmic Invaders");
+    c.InitWindow(conf.WIN_WIDTH, conf.WIN_HEIGHT, "Cosmic Invaders");
     c.InitAudioDevice();
     c.SetTargetFPS(60);
     defer c.CloseWindow();
@@ -90,6 +90,7 @@ pub fn main() !void {
     defer unloadAssets();
 
     state.mGame = state.GameState.init(alloc);
+    try state.mGame.setup();
     defer state.mGame.deinit();
 
     while (!c.WindowShouldClose()) {
@@ -99,18 +100,34 @@ pub fn main() !void {
 }
 
 fn loadAssets() !void {
+    txtrs.Textures.Clouds[0] = c.LoadTexture("data/cloud1.mz.png");
+    txtrs.Textures.Clouds[1] = c.LoadTexture("data/cloud2.mz.png");
+    txtrs.Textures.Clouds[2] = c.LoadTexture("data/cloud3.mz.png");
+    txtrs.Textures.Clouds[3] = c.LoadTexture("data/cloud4.mz.png");
+    txtrs.Textures.Clouds[4] = c.LoadTexture("data/cloud5.mz.png");
+
     background = c.LoadTexture("data/bg.mz.png");
     invader1 = c.LoadTexture("data/invader1.sz.png");
     turret2 = c.LoadTexture("data/turret2.mz.png");
 }
 
 fn unloadAssets() void {
+    for (txtrs.Textures.Clouds) |cloud| {
+        c.UnloadTexture(cloud);
+    }
+
     defer c.UnloadTexture(background);
+
     defer c.UnloadTexture(invader1);
     defer c.UnloadTexture(turret2);
 }
 
 fn update() !void {
+    // Clouds
+    for (state.mGame.mClouds.items) |*cloud| {
+        cloud.update();
+    }
+
     // Hive
     try state.mGame.mHive.update();
 
@@ -132,13 +149,34 @@ fn draw() !void {
     c.BeginDrawing();
     defer c.EndDrawing();
 
-    drawTextureScaled(0, 0, background, 2.0);
-    drawTextureScaled(50, 10, invader1, 2.0);
-    drawTextureScaled(320, 394, turret2, 2.0);
+    c.ClearBackground(c.WHITE);
+
+    // Draw background.
+    var view = c.Rectangle{ .x = 0, .y = 0, .width = 320, .height = 240 };
+    drawTextureScaled(0, 0, background, view, 2.0);
+
+    // Draw clouds.
+    for (state.mGame.mClouds.items) |*cloud| {
+        cloud.draw();
+    }
 
     // Invaders
     for (state.mGame.mHive.mInvaders.items) |inv| {
-        drawTextureScaled(inv.mX, inv.mY, invader1, 2.0);
+        const width = 16;
+        const height = 13;
+        const frameSeqCount = 6;
+        const halfFrameSeqCount = frameSeqCount / 2;
+        const speedReduceFactor = 12;
+        // Division is used to slow the ticks down a bit.
+        // Using ticks as a stream of numbers, generates 0-5 inclusive
+        const phase = (state.mGame.mTicks / speedReduceFactor) % frameSeqCount;
+        // Then the upper half of the numbers are subtracted from 6, to create a
+        // repeating pattern that goes up and down in sequence.
+        const value = if (phase > halfFrameSeqCount) frameSeqCount - phase else phase;
+        const xOffset: f32 = @floatFromInt(value * width);
+        const yOffset: f32 = @floatFromInt(height * 0);
+        view = c.Rectangle{ .x = xOffset, .y = yOffset, .width = width, .height = height };
+        drawTextureScaled(inv.mX, inv.mY, invader1, view, 2.0);
     }
 
     // Enemy projectiles
@@ -202,18 +240,18 @@ fn drawLighteningStrike(fromX: i32, fromY: i32, toX: i32, toY: i32) void {
     c.DrawRectangle(toX + toY, currentY, pixelSize, pixelSize, c.BLUE);
 }
 
-fn drawTextureScaled(x: i32, y: i32, texture: c.Texture, scale: f32) void {
+fn drawTextureScaled(x: i32, y: i32, texture: c.Texture, view: c.Rectangle, scale: f32) void {
     const src = c.Rectangle{
-        .x = 0,
-        .y = 0,
-        .width = @floatFromInt(texture.width),
-        .height = @floatFromInt(texture.height),
+        .x = view.x,
+        .y = view.y,
+        .width = view.width,
+        .height = view.height,
     };
     const dst = c.Rectangle{
         .x = @floatFromInt(x),
         .y = @floatFromInt(y),
-        .width = @as(f32, @floatFromInt(texture.width)) * scale,
-        .height = @as(f32, @floatFromInt(texture.height)) * scale,
+        .width = view.width * scale,
+        .height = view.height * scale,
     };
 
     c.DrawTexturePro(
