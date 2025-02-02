@@ -1,6 +1,7 @@
 const std = @import("std");
 const state = @import("gamestate.zig");
 const conf = @import("conf.zig");
+const txtrs = @import("textures.zig");
 const c = @import("cdefs.zig").c;
 
 pub const HiveBoundsMargin = 10;
@@ -14,24 +15,44 @@ pub const HiveState = enum {
 };
 
 pub const Hive = struct {
+    allocator: std.mem.Allocator,
     mInvaders: std.ArrayList(Invader) = undefined,
-    mDirection: i32 = 1,
-    mHorizontalSpeed: i32 = 1,
-    mDescendingSpeed: i32 = 1,
+    mState: HiveState = .Scanning,
+
+    mDirection: f32 = 1,
+    mHorizontalSpeed: f32 = 1,
+    mDescendingSpeed: f32 = 1,
     mDescendCountdown: i32 = conf.DescendCountdown,
     mAttackCountdown: i32 = conf.AttackCooldown,
-    mState: HiveState = .Scanning,
 
     const Self = @This();
 
-    pub fn init(allocator: std.mem.Allocator) Self {
-        // Create the invaders.
-        var invaders = std.ArrayList(Invader).init(allocator);
-        invaders.append(Invader{ .mX = 40, .mY = 20 }) catch unreachable;
-
+    pub fn create(allocator: std.mem.Allocator) Self {
         return Self{
-            .mInvaders = invaders,
+            .allocator = allocator,
         };
+    }
+
+    pub fn init(self: *Self) !void {
+        // Create the invaders.
+        self.mInvaders = std.ArrayList(Invader).init(self.allocator);
+
+        const xOffset = 40;
+        const yOffset = 20;
+
+        const invWidth = 16 * 2;
+        const invHeight = 13 * 2;
+        const invXPadding = 4;
+        const invYPadding = 4;
+
+        for (0..4) |y| {
+            for (0..12) |x| {
+                try self.mInvaders.append(Invader{
+                    .mX = xOffset + ((invWidth + invXPadding) * @as(f32, @floatFromInt(x))),
+                    .mY = yOffset + ((invHeight + invYPadding) * @as(f32, @floatFromInt(y))),
+                });
+            }
+        }
     }
 
     pub fn deinit(self: *Self) void {
@@ -45,14 +66,31 @@ pub const Hive = struct {
 
         switch (self.mState) {
             .Scanning => {
+                // Determine the bounds of the entire swarm.
+                var minX: f32 = std.math.floatMax(f32);
+                var maxX: f32 = -std.math.floatMin(f32);
+
                 for (self.mInvaders.items) |*inv| {
-                    inv.mX += self.mHorizontalSpeed * self.mDirection;
-                    if (inv.mX > (conf.WIN_WIDTH - HiveBoundsMargin) or inv.mX < HiveBoundsMargin) {
-                        self.mDescendCountdown = conf.DescendCountdown;
-                        self.mDirection *= -1;
-                        self.mState = .Descending;
+                    if (inv.mX < minX) {
+                        minX = inv.mX;
+                    }
+                    if (inv.mX > maxX) {
+                        maxX = inv.mX;
                     }
                 }
+
+                // Check if moving the entire swarm would exceed boundaries.
+                if (maxX + self.mHorizontalSpeed * self.mDirection > (conf.WIN_WIDTH - HiveBoundsMargin) or
+                    (minX + self.mHorizontalSpeed * self.mDirection) < HiveBoundsMargin)
+                {
+                    self.mDescendCountdown = conf.DescendCountdown;
+                    self.mState = .Descending;
+                } else {
+                    for (self.mInvaders.items) |*inv| {
+                        inv.mX += self.mHorizontalSpeed * self.mDirection;
+                    }
+                }
+
                 self.mAttackCountdown -= 1;
 
                 if (self.mAttackCountdown <= 0) {
@@ -66,14 +104,16 @@ pub const Hive = struct {
                 }
                 self.mDescendCountdown -= 1;
                 if (self.mDescendCountdown <= 0) {
+                    self.mDirection *= -1;
                     self.mState = .Scanning;
                 }
             },
             .Attack => {
                 // Choose random invader to attack.
-                const invIdx = self.mInvaders.items.len - 1;
-                const selectedInv = self.mInvaders.items[invIdx];
-                try state.mGame.mEnemyProjectiles.append(.{ .mX = selectedInv.mX, .mY = selectedInv.mY });
+                const invTotal = self.mInvaders.items.len - 1;
+                const randInvIdx: usize = @intCast(c.GetRandomValue(0, @intCast(invTotal)));
+                const selectedInv = self.mInvaders.items[randInvIdx];
+                try state.mGame.mEnemyProjectiles.append(.{ .mX = @intFromFloat(selectedInv.mX), .mY = @intFromFloat(selectedInv.mY) });
 
                 self.mState = .Scanning;
             },
@@ -84,8 +124,8 @@ pub const Hive = struct {
 };
 
 pub const Invader = struct {
-    mX: i32 = 0,
-    mY: i32 = 0,
+    mX: f32 = 0,
+    mY: f32 = 0,
 
     const Self = @This();
 };

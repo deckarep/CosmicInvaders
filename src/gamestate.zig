@@ -2,6 +2,7 @@ const std = @import("std");
 const hive = @import("hive.zig");
 const proj = @import("projectile.zig");
 const cld = @import("cloud.zig");
+const conf = @import("conf.zig");
 const txtrs = @import("textures.zig");
 const c = @import("cdefs.zig").c;
 
@@ -14,9 +15,9 @@ pub const GameState = struct {
 
     const Self = @This();
 
-    pub fn init(allocator: std.mem.Allocator) Self {
+    pub fn create(allocator: std.mem.Allocator) Self {
         return Self{
-            .mHive = hive.Hive.init(allocator),
+            .mHive = hive.Hive.create(allocator),
             .mClouds = std.ArrayList(cld.Cloud).init(allocator),
             .mEnemyProjectiles = std.ArrayList(proj.Projectile).init(allocator),
             .mPlayerProjectiles = std.ArrayList(proj.Projectile).init(allocator),
@@ -29,12 +30,13 @@ pub const GameState = struct {
         self.mPlayerProjectiles.deinit();
     }
 
-    pub fn setup(self: *Self) !void {
+    pub fn init(self: *Self) !void {
         // Create some clouds.
-        for (0..6) |_| {
+        for (0..conf.NumClouds) |_| {
             const cldIdx = c.GetRandomValue(0, txtrs.Textures.Clouds.len - 1);
             try self.mClouds.append(cld.Cloud.init(txtrs.Textures.Clouds[@intCast(cldIdx)]));
         }
+        try self.mHive.init();
     }
 };
 

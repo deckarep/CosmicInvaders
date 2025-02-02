@@ -89,8 +89,8 @@ pub fn main() !void {
     try loadAssets();
     defer unloadAssets();
 
-    state.mGame = state.GameState.init(alloc);
-    try state.mGame.setup();
+    state.mGame = state.GameState.create(alloc);
+    try state.mGame.init();
     defer state.mGame.deinit();
 
     while (!c.WindowShouldClose()) {
@@ -161,22 +161,23 @@ fn draw() !void {
     }
 
     // Invaders
-    for (state.mGame.mHive.mInvaders.items) |inv| {
+    for (state.mGame.mHive.mInvaders.items, 0..) |inv, idx| {
         const width = 16;
         const height = 13;
         const frameSeqCount = 6;
         const halfFrameSeqCount = frameSeqCount / 2;
-        const speedReduceFactor = 12;
+        const speedReduceFactor = 10;
         // Division is used to slow the ticks down a bit.
         // Using ticks as a stream of numbers, generates 0-5 inclusive
-        const phase = (state.mGame.mTicks / speedReduceFactor) % frameSeqCount;
+        // Using the idx, causes the animations to offset by idx number.
+        const phase = (((state.mGame.mTicks) / speedReduceFactor) + idx) % frameSeqCount;
         // Then the upper half of the numbers are subtracted from 6, to create a
         // repeating pattern that goes up and down in sequence.
         const value = if (phase > halfFrameSeqCount) frameSeqCount - phase else phase;
         const xOffset: f32 = @floatFromInt(value * width);
         const yOffset: f32 = @floatFromInt(height * 0);
         view = c.Rectangle{ .x = xOffset, .y = yOffset, .width = width, .height = height };
-        drawTextureScaled(inv.mX, inv.mY, invader1, view, 2.0);
+        drawTextureScaled(@intFromFloat(inv.mX), @intFromFloat(inv.mY), invader1, view, 2.0);
     }
 
     // Enemy projectiles
