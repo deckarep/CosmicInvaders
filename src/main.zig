@@ -3,6 +3,7 @@ const state = @import("gamestate.zig");
 const conf = @import("conf.zig");
 const zigimg = @import("zigimg");
 const hive = @import("hive.zig");
+const exp = @import("explosion.zig");
 const txtrs = @import("textures.zig");
 const drw = @import("draw.zig");
 const c = @import("cdefs.zig").c;
@@ -108,6 +109,7 @@ fn loadAssets() !void {
     txtrs.Textures.Clouds[4] = c.LoadTexture("data/cloud5.mz.png");
 
     txtrs.Textures.AlienBullet = c.LoadTexture("data/alienbullet.sz.png");
+    txtrs.Textures.Effects.Poof = c.LoadTexture("data/poof.sz.png");
 
     background = c.LoadTexture("data/bg.mz.png");
     invader1 = c.LoadTexture("data/invader1.sz.png");
@@ -119,10 +121,11 @@ fn unloadAssets() void {
         c.UnloadTexture(cloud);
     }
 
-    defer c.UnloadTexture(txtrs.Textures.AlienBullet);
-    defer c.UnloadTexture(background);
-    defer c.UnloadTexture(invader1);
-    defer c.UnloadTexture(turret2);
+    c.UnloadTexture(txtrs.Textures.AlienBullet);
+    c.UnloadTexture(txtrs.Textures.Effects.Poof);
+    c.UnloadTexture(background);
+    c.UnloadTexture(invader1);
+    c.UnloadTexture(turret2);
 }
 
 fn update() !void {
@@ -139,8 +142,22 @@ fn update() !void {
     while (len > 0) : (len -= 1) {
         var currProj = &state.mGame.mEnemyProjectiles.items[len - 1];
         currProj.update();
-        if (currProj.mY >= conf.WIN_HEIGHT) {
+        if (currProj.mY >= conf.LAND_HEIGHT) {
+            try state.mGame.mInplaceExplosions.append(exp.Explosion.create(currProj.mX, currProj.mY, txtrs.Textures.Effects.Poof));
             _ = state.mGame.mEnemyProjectiles.swapRemove(len - 1);
+        }
+    }
+
+    // Explosions
+    len = state.mGame.mInplaceExplosions.items.len;
+    std.debug.print("exp len: {d}\n", .{len});
+    while (len > 0) : (len -= 1) {
+        var currExp = &state.mGame.mInplaceExplosions.items[len - 1];
+        try currExp.update();
+
+        if (currExp.ended) {
+            _ = state.mGame.mInplaceExplosions.swapRemove(len - 1);
+            continue;
         }
     }
 
@@ -196,6 +213,11 @@ fn draw() !void {
         const yOffset: f32 = @floatFromInt(h * 0);
         view = c.Rectangle{ .x = xOffset, .y = yOffset, .width = 5, .height = 5 };
         drw.drawTextureScaled(prj.mX, prj.mY, txtrs.Textures.AlienBullet, view, 2.0);
+    }
+
+    // Explosions
+    for (state.mGame.mInplaceExplosions.items) |*expl| {
+        expl.draw();
     }
 
     // lightening strike
