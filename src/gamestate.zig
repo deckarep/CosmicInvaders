@@ -8,6 +8,9 @@ const c = @import("cdefs.zig").c;
 
 pub const GameState = struct {
     mTicks: usize = 0,
+
+    mWave: usize = 0,
+
     mHive: hive.Hive = undefined,
     mClouds: std.ArrayList(cld.Cloud) = undefined,
     mEnemyProjectiles: std.ArrayList(proj.Projectile) = undefined,

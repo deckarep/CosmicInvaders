@@ -4,6 +4,7 @@ const conf = @import("conf.zig");
 const zigimg = @import("zigimg");
 const hive = @import("hive.zig");
 const txtrs = @import("textures.zig");
+const drw = @import("draw.zig");
 const c = @import("cdefs.zig").c;
 
 // Window includes monitor.
@@ -106,6 +107,8 @@ fn loadAssets() !void {
     txtrs.Textures.Clouds[3] = c.LoadTexture("data/cloud4.mz.png");
     txtrs.Textures.Clouds[4] = c.LoadTexture("data/cloud5.mz.png");
 
+    txtrs.Textures.AlienBullet = c.LoadTexture("data/alienbullet.sz.png");
+
     background = c.LoadTexture("data/bg.mz.png");
     invader1 = c.LoadTexture("data/invader1.sz.png");
     turret2 = c.LoadTexture("data/turret2.mz.png");
@@ -116,8 +119,8 @@ fn unloadAssets() void {
         c.UnloadTexture(cloud);
     }
 
+    defer c.UnloadTexture(txtrs.Textures.AlienBullet);
     defer c.UnloadTexture(background);
-
     defer c.UnloadTexture(invader1);
     defer c.UnloadTexture(turret2);
 }
@@ -182,7 +185,17 @@ fn draw() !void {
 
     // Enemy projectiles
     for (state.mGame.mEnemyProjectiles.items) |prj| {
-        c.DrawCircle(prj.mX, prj.mY, 4, c.RED);
+        const w = 5;
+        const h = 5;
+        const frameSeqCount = 7;
+        const halfFrameSeqCount = frameSeqCount / 2;
+        const speedReduceFactor = 6;
+        const phase = (((state.mGame.mTicks) / speedReduceFactor)) % frameSeqCount;
+        const value = if (phase > halfFrameSeqCount) frameSeqCount - phase else phase;
+        const xOffset: f32 = @floatFromInt(value * w);
+        const yOffset: f32 = @floatFromInt(h * 0);
+        view = c.Rectangle{ .x = xOffset, .y = yOffset, .width = 5, .height = 5 };
+        drw.drawTextureScaled(prj.mX, prj.mY, txtrs.Textures.AlienBullet, view, 2.0);
     }
 
     // lightening strike

@@ -2,6 +2,7 @@ const std = @import("std");
 const state = @import("gamestate.zig");
 const conf = @import("conf.zig");
 const txtrs = @import("textures.zig");
+const prj = @import("projectile.zig");
 const c = @import("cdefs.zig").c;
 
 pub const HiveBoundsMargin = 10;
@@ -113,7 +114,7 @@ pub const Hive = struct {
                 const invTotal = self.mInvaders.items.len - 1;
                 const randInvIdx: usize = @intCast(c.GetRandomValue(0, @intCast(invTotal)));
                 const selectedInv = self.mInvaders.items[randInvIdx];
-                try state.mGame.mEnemyProjectiles.append(.{ .mX = @intFromFloat(selectedInv.mX), .mY = @intFromFloat(selectedInv.mY) });
+                try state.mGame.mEnemyProjectiles.append(prj.Projectile.create(selectedInv.mX, selectedInv.mY));
 
                 self.mState = .Scanning;
             },

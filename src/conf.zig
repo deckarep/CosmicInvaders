@@ -5,4 +5,4 @@ pub const NumClouds = 6;
 pub const DescendCountdown = 10;
 pub const AttackCooldown = 60;
 
-pub const EnemyProjectileYSpeed = 4;
+pub const EnemyProjectileYSpeed = 2;
