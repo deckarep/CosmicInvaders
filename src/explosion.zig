@@ -33,14 +33,12 @@ pub const Explosion = struct {
     pub fn draw(self: Self) void {
         if (self.ended) return;
 
-        const w = 18;
-        const h = 18;
-        //const frameSeqCount = 7;
-        // const speedReduceFactor = 6;
-        //const value = (((state.mGame.mTicks) / speedReduceFactor)) % frameSeqCount;
-        const value = self.currentFrame;
-        const xOffset: f32 = @floatFromInt(value * w);
-        const yOffset: f32 = @floatFromInt(h * 0);
+        const w: f32 = 18;
+        const h: f32 = 18;
+
+        const value: f32 = @floatFromInt(self.currentFrame);
+        const xOffset: f32 = value * w;
+        const yOffset: f32 = h * 0;
         const view = c.Rectangle{ .x = xOffset, .y = yOffset, .width = w, .height = h };
 
         drw.drawTextureScaled(self.mX, self.mY, self.mTexture, view, 2.0);

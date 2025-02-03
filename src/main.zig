@@ -129,40 +129,7 @@ fn unloadAssets() void {
 }
 
 fn update() !void {
-    // Clouds
-    for (state.mGame.mClouds.items) |*cloud| {
-        cloud.update();
-    }
-
-    // Hive
-    try state.mGame.mHive.update();
-
-    // Enemy projectiles
-    var len = state.mGame.mEnemyProjectiles.items.len;
-    while (len > 0) : (len -= 1) {
-        var currProj = &state.mGame.mEnemyProjectiles.items[len - 1];
-        currProj.update();
-        if (currProj.mY >= conf.LAND_HEIGHT) {
-            try state.mGame.mInplaceExplosions.append(exp.Explosion.create(currProj.mX, currProj.mY, txtrs.Textures.Effects.Poof));
-            _ = state.mGame.mEnemyProjectiles.swapRemove(len - 1);
-        }
-    }
-
-    // Explosions
-    len = state.mGame.mInplaceExplosions.items.len;
-    std.debug.print("exp len: {d}\n", .{len});
-    while (len > 0) : (len -= 1) {
-        var currExp = &state.mGame.mInplaceExplosions.items[len - 1];
-        try currExp.update();
-
-        if (currExp.ended) {
-            _ = state.mGame.mInplaceExplosions.swapRemove(len - 1);
-            continue;
-        }
-    }
-
-    // Bump ticks.
-    state.mGame.mTicks += 1;
+    try state.mGame.update();
 }
 
 fn draw() !void {

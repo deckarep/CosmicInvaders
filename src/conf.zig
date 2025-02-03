@@ -1,6 +1,6 @@
 pub const WIN_WIDTH = 640;
 pub const WIN_HEIGHT = 480;
-pub const LAND_HEIGHT = 424;
+pub const LAND_HEIGHT = 400;
 
 pub const NumClouds = 6;
 pub const DescendCountdown = 10;

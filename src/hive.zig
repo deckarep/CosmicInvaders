@@ -11,8 +11,6 @@ pub const HiveState = enum {
     Scanning, // horizontal movement in either direction (left or right)
     Descending, // ticking closer to player
     Attack,
-    Hit,
-    Dying,
 };
 
 pub const Hive = struct {
@@ -39,7 +37,7 @@ pub const Hive = struct {
         self.mInvaders = std.ArrayList(Invader).init(self.allocator);
 
         const xOffset = 40;
-        const yOffset = 20;
+        const yOffset = 200;
 
         const invWidth = 16 * 2;
         const invHeight = 13 * 2;
@@ -100,10 +98,32 @@ pub const Hive = struct {
                 }
             },
             .Descending => {
+                var purgeOneOrMoreDead = false;
                 for (self.mInvaders.items) |*inv| {
                     inv.mY += self.mDescendingSpeed;
+
+                    if (inv.mY >= conf.LAND_HEIGHT) {
+                        inv.dead = true;
+                        purgeOneOrMoreDead = true;
+                    }
                 }
+
+                // During the descent, one or more invaders died and need to be
+                // purged from the hive. The hive does not tolerate death!
+                if (purgeOneOrMoreDead) {
+                    var len = self.mInvaders.items.len;
+                    while (len != 0) : (len -= 1) {
+                        const currInv = self.mInvaders.items[len - 1];
+                        if (currInv.dead) {
+                            // TODO: also show a -1 per invader to health.
+                            try state.mGame.createPoofExplosion(currInv.mX, currInv.mY);
+                            _ = self.mInvaders.swapRemove(len - 1);
+                        }
+                    }
+                }
+
                 self.mDescendCountdown -= 1;
+
                 if (self.mDescendCountdown <= 0) {
                     self.mDirection *= -1;
                     self.mState = .Scanning;
@@ -118,8 +138,6 @@ pub const Hive = struct {
 
                 self.mState = .Scanning;
             },
-            .Hit => {},
-            .Dying => {},
         }
     }
 };
@@ -127,6 +145,7 @@ pub const Hive = struct {
 pub const Invader = struct {
     mX: f32 = 0,
     mY: f32 = 0,
+    dead: bool = false,
 
     const Self = @This();
 };

@@ -46,6 +46,45 @@ pub const GameState = struct {
         }
         try self.mHive.init();
     }
+
+    pub fn update(self: *Self) !void {
+        // Clouds
+        for (self.mClouds.items) |*cloud| {
+            cloud.update();
+        }
+
+        // Hive
+        try self.mHive.update();
+
+        // Enemy projectiles
+        var len = self.mEnemyProjectiles.items.len;
+        while (len > 0) : (len -= 1) {
+            var currProj = &self.mEnemyProjectiles.items[len - 1];
+            currProj.update();
+            if (currProj.mY >= conf.LAND_HEIGHT) {
+                try self.createPoofExplosion(currProj.mX, currProj.mY);
+                _ = self.mEnemyProjectiles.swapRemove(len - 1);
+            }
+        }
+
+        // Explosions
+        len = self.mInplaceExplosions.items.len;
+        while (len > 0) : (len -= 1) {
+            var currExp = &self.mInplaceExplosions.items[len - 1];
+            try currExp.update();
+
+            if (currExp.ended) {
+                _ = self.mInplaceExplosions.swapRemove(len - 1);
+            }
+        }
+
+        // Bump ticks.
+        self.mTicks += 1;
+    }
+
+    pub fn createPoofExplosion(self: *Self, x: f32, y: f32) !void {
+        try self.mInplaceExplosions.append(exp.Explosion.create(x, y, txtrs.Textures.Effects.Poof));
+    }
 };
 
 pub var mGame: GameState = undefined;
