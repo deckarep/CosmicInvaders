@@ -14,6 +14,7 @@ pub const GameState = struct {
     mWave: usize = 0,
 
     mHive: hive.Hive = undefined,
+    mHiveCooldown: usize = conf.HiveRespawnCooldown,
     mClouds: std.ArrayList(cld.Cloud) = undefined,
     mFloatingScores: std.ArrayList(fls.FloatingScore) = undefined,
     mEnemyProjectiles: std.ArrayList(proj.Projectile) = undefined,
@@ -59,6 +60,13 @@ pub const GameState = struct {
 
         // Hive
         try self.mHive.update();
+        if (self.mHive.dead()) {
+            self.mHiveCooldown -= 1;
+            if (self.mHiveCooldown <= 0) {
+                try self.mHive.reset();
+                self.mHiveCooldown = conf.HiveRespawnCooldown;
+            }
+        }
 
         // Enemy projectiles
         var len = self.mEnemyProjectiles.items.len;

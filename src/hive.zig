@@ -36,6 +36,10 @@ pub const Hive = struct {
         // Create the invaders.
         self.mInvaders = std.ArrayList(Invader).init(self.allocator);
 
+        try self.reset();
+    }
+
+    pub fn reset(self: *Self) !void {
         const xOffset = 40;
         const yOffset = 300;
 
@@ -56,6 +60,10 @@ pub const Hive = struct {
 
     pub fn deinit(self: *Self) void {
         self.mInvaders.deinit();
+    }
+
+    pub inline fn dead(self: Self) bool {
+        return self.mInvaders.items.len == 0;
     }
 
     // TODO: some kind of functions to initialize the invader count.
@@ -119,7 +127,7 @@ pub const Hive = struct {
                     while (len != 0) : (len -= 1) {
                         const currInv = self.mInvaders.items[len - 1];
                         if (currInv.dead) {
-                            // TODO: also spawn a -1 to score per invader to health.
+                            // When invader is dead, spawn a poof explosion as well as a -1 red mini score.
                             try state.mGame.createPoofExplosion(currInv.mX, currInv.mY);
                             try state.mGame.createMinRedFloatingScore("-1", currInv.mX, currInv.mY);
                             _ = self.mInvaders.swapRemove(len - 1);

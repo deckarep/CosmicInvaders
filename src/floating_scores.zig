@@ -44,6 +44,8 @@ pub const FloatingScore = struct {
     }
 
     pub fn draw(self: Self) void {
+        if (self.mLifetime <= 0) return;
+
         switch (self.mKind) {
             .MiniRed => {
                 c.DrawTextEx(
