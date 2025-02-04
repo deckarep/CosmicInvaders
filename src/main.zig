@@ -76,6 +76,9 @@ var background: c.Texture = undefined;
 var invader1: c.Texture = undefined;
 var turret2: c.Texture = undefined;
 
+var font: c.Font = undefined;
+//var allegFnt: c.Font = undefined;
+
 pub fn main() !void {
     // Prints to stderr (it's a shortcut based on `std.io.getStdErr()`)
     std.debug.print("All your {s} are belong to us.\n", .{"codebase"});
@@ -90,6 +93,8 @@ pub fn main() !void {
 
     try loadAssets();
     defer unloadAssets();
+
+    //allegFnt = try drw.loadAllegroFont("data/font_big_red.mz.png", alloc);
 
     state.mGame = state.GameState.create(alloc);
     try state.mGame.init();
@@ -114,6 +119,7 @@ fn loadAssets() !void {
     background = c.LoadTexture("data/bg.mz.png");
     invader1 = c.LoadTexture("data/invader1.sz.png");
     turret2 = c.LoadTexture("data/turret2.mz.png");
+    txtrs.Textures.Fonts.Font1 = c.LoadFont("data/font_big_red_xna.png");
 }
 
 fn unloadAssets() void {
@@ -126,6 +132,7 @@ fn unloadAssets() void {
     c.UnloadTexture(background);
     c.UnloadTexture(invader1);
     c.UnloadTexture(turret2);
+    c.UnloadFont(txtrs.Textures.Fonts.Font1);
 }
 
 fn update() !void {
@@ -187,8 +194,15 @@ fn draw() !void {
         expl.draw();
     }
 
+    // Floating scores.
+    for (state.mGame.mFloatingScores.items) |fs| {
+        fs.draw();
+    }
+
     // lightening strike
     drawLighteningStrike(10, 10, 300, 400);
+
+    //c.DrawTextEx(font, "WAVE 1", .{ .x = 20, .y = 20 }, 15, 2, conf.FontColor.Red);
 
     c.DrawRectangle(8, conf.WIN_HEIGHT - 20, 80, 40, c.BLACK);
     c.DrawFPS(10, conf.WIN_HEIGHT - 20);
@@ -305,12 +319,16 @@ fn genBitmapFile(path: [:0]const u8, allocator: std.mem.Allocator) !void {
             // this era, we just set the alpha to 0 otherwise it remains 255.
             var a: u8 = 255;
 
+            // Just render fonts how they originally were designed!
+            //if (!std.mem.startsWith(u8, path, "data/font_")) {
+
             // Check for KeyOut colors
             if (color24Eq(color, KeyOutHotPink) or
                 (color24Eq(color, KeyOutFontBlue) and std.mem.startsWith(u8, path, "data/font_")))
             {
                 a = 0; // Knock out color by setting alpha to 0
             }
+            //}
 
             // Ensure we index correctly within bounds
             const index = (y * @as(usize, @intCast(height))) + x;

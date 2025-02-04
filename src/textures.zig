@@ -8,4 +8,8 @@ pub const Textures = struct {
     pub const Effects = struct {
         pub var Poof: c.Texture = undefined;
     };
+
+    pub const Fonts = struct {
+        pub var Font1: c.Font = undefined;
+    };
 };

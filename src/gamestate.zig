@@ -5,6 +5,7 @@ const exp = @import("explosion.zig");
 const cld = @import("cloud.zig");
 const conf = @import("conf.zig");
 const txtrs = @import("textures.zig");
+const fls = @import("floating_scores.zig");
 const c = @import("cdefs.zig").c;
 
 pub const GameState = struct {
@@ -14,6 +15,7 @@ pub const GameState = struct {
 
     mHive: hive.Hive = undefined,
     mClouds: std.ArrayList(cld.Cloud) = undefined,
+    mFloatingScores: std.ArrayList(fls.FloatingScore) = undefined,
     mEnemyProjectiles: std.ArrayList(proj.Projectile) = undefined,
     mPlayerProjectiles: std.ArrayList(proj.Projectile) = undefined,
     mInplaceExplosions: std.ArrayList(exp.Explosion) = undefined,
@@ -27,6 +29,7 @@ pub const GameState = struct {
             .mEnemyProjectiles = std.ArrayList(proj.Projectile).init(allocator),
             .mPlayerProjectiles = std.ArrayList(proj.Projectile).init(allocator),
             .mInplaceExplosions = std.ArrayList(exp.Explosion).init(allocator),
+            .mFloatingScores = std.ArrayList(fls.FloatingScore).init(allocator),
         };
     }
 
@@ -36,6 +39,7 @@ pub const GameState = struct {
         self.mEnemyProjectiles.deinit();
         self.mPlayerProjectiles.deinit();
         self.mInplaceExplosions.deinit();
+        self.mFloatingScores.deinit();
     }
 
     pub fn init(self: *Self) !void {
@@ -78,12 +82,32 @@ pub const GameState = struct {
             }
         }
 
+        // Floating Scores
+        len = self.mFloatingScores.items.len;
+        while (len > 0) : (len -= 1) {
+            var currScore = &self.mFloatingScores.items[len - 1];
+            currScore.update();
+
+            if (currScore.ended()) {
+                _ = self.mFloatingScores.swapRemove(len - 1);
+            }
+        }
+
         // Bump ticks.
         self.mTicks += 1;
     }
 
     pub fn createPoofExplosion(self: *Self, x: f32, y: f32) !void {
         try self.mInplaceExplosions.append(exp.Explosion.create(x, y, txtrs.Textures.Effects.Poof));
+    }
+
+    pub fn createMinRedFloatingScore(self: *Self, text: [:0]const u8, x: f32, y: f32) !void {
+        try self.mFloatingScores.append(fls.FloatingScore.create(
+            text,
+            x,
+            y,
+            fls.ScoreStyle.MiniRed,
+        ));
     }
 };
 

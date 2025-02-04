@@ -37,7 +37,7 @@ pub const Hive = struct {
         self.mInvaders = std.ArrayList(Invader).init(self.allocator);
 
         const xOffset = 40;
-        const yOffset = 200;
+        const yOffset = 300;
 
         const invWidth = 16 * 2;
         const invHeight = 13 * 2;
@@ -62,6 +62,10 @@ pub const Hive = struct {
 
     pub fn update(self: *Self) !void {
         //if (state.mGame.mTicks % 2 != 0) return;
+        if (self.mInvaders.items.len == 0) {
+            // TODO: Hive must have been wiped out, spawn a new wave.
+            return;
+        }
 
         switch (self.mState) {
             .Scanning => {
@@ -115,15 +119,15 @@ pub const Hive = struct {
                     while (len != 0) : (len -= 1) {
                         const currInv = self.mInvaders.items[len - 1];
                         if (currInv.dead) {
-                            // TODO: also show a -1 per invader to health.
+                            // TODO: also spawn a -1 to score per invader to health.
                             try state.mGame.createPoofExplosion(currInv.mX, currInv.mY);
+                            try state.mGame.createMinRedFloatingScore("-1", currInv.mX, currInv.mY);
                             _ = self.mInvaders.swapRemove(len - 1);
                         }
                     }
                 }
 
                 self.mDescendCountdown -= 1;
-
                 if (self.mDescendCountdown <= 0) {
                     self.mDirection *= -1;
                     self.mState = .Scanning;
