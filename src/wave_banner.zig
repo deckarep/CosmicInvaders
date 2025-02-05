@@ -85,7 +85,7 @@ pub const WaveBanner = struct {
     pub fn draw(self: Self) !void {
         if (self.mState == .Initial) return;
 
-        var buf: [8]u8 = undefined;
+        var buf: [16]u8 = undefined;
         const fontSize = 50;
         const fontSpacing = 1;
 

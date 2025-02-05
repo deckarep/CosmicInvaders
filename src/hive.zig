@@ -5,6 +5,9 @@ const txtrs = @import("textures.zig");
 const prj = @import("projectile.zig");
 const c = @import("cdefs.zig").c;
 
+const invWidth = 16 * 2;
+const invHeight = 13 * 2;
+
 pub const HiveBoundsMargin = 10;
 
 pub const HiveState = enum {
@@ -17,7 +20,7 @@ pub const Hive = struct {
     allocator: std.mem.Allocator,
     mInvaders: std.ArrayList(Invader) = undefined,
     mState: HiveState = .Scanning,
-    mRows: usize = 1,
+    mRows: usize = 4,
 
     mDirection: f32 = 1,
     mHorizontalSpeed: f32 = 1,
@@ -45,8 +48,6 @@ pub const Hive = struct {
         const xOffset = 40;
         const yOffset = 300;
 
-        const invWidth = 16 * 2;
-        const invHeight = 13 * 2;
         const invXPadding = 4;
         const invYPadding = 4;
 
@@ -89,8 +90,9 @@ pub const Hive = struct {
                     if (inv.mX < minX) {
                         minX = inv.mX;
                     }
-                    if (inv.mX > maxX) {
-                        maxX = inv.mX;
+                    // NOTE: the right side of the bounds should also include the width of the invader.
+                    if (inv.mX + invWidth > maxX) {
+                        maxX = inv.mX + invWidth;
                     }
                 }
 
@@ -119,7 +121,7 @@ pub const Hive = struct {
                     inv.mY += self.mDescendingSpeed;
 
                     if (inv.mY >= conf.LAND_HEIGHT) {
-                        inv.dead = true;
+                        inv.deathReason = .HitGround;
                         purgeOneOrMoreDead = true;
                     }
                 }
@@ -130,10 +132,15 @@ pub const Hive = struct {
                     var len = self.mInvaders.items.len;
                     while (len != 0) : (len -= 1) {
                         const currInv = self.mInvaders.items[len - 1];
-                        if (currInv.dead) {
+                        if (currInv.dead()) {
                             // When invader is dead, spawn a poof explosion as well as a -1 red mini score.
                             try state.mGame.createPoofExplosion(currInv.mX, currInv.mY);
-                            try state.mGame.createMinRedFloatingScore("-1", currInv.mX, currInv.mY);
+
+                            switch (currInv.deathReason.?) {
+                                .HitGround => try state.mGame.createMiniRedFloatingScore("-1", currInv.mX, currInv.mY),
+                                .PlayerProjectile => try state.mGame.createSmallWhiteFloatingScore("+20", currInv.mX, currInv.mY),
+                            }
+
                             _ = self.mInvaders.swapRemove(len - 1);
                         }
                     }
@@ -158,10 +165,20 @@ pub const Hive = struct {
     }
 };
 
+pub const InvaderDeathReason = enum(u8) {
+    HitGround,
+    PlayerProjectile,
+};
+
 pub const Invader = struct {
     mX: f32 = 0,
     mY: f32 = 0,
-    dead: bool = false,
+    // If null, player is not dead.
+    deathReason: ?InvaderDeathReason = null,
 
     const Self = @This();
+
+    pub inline fn dead(self: Self) bool {
+        return self.deathReason != null;
+    }
 };

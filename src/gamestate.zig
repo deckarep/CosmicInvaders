@@ -123,12 +123,21 @@ pub const GameState = struct {
         try self.mInplaceExplosions.append(exp.Explosion.create(x, y, txtrs.Textures.Effects.Poof));
     }
 
-    pub fn createMinRedFloatingScore(self: *Self, text: [:0]const u8, x: f32, y: f32) !void {
+    pub fn createMiniRedFloatingScore(self: *Self, text: [:0]const u8, x: f32, y: f32) !void {
         try self.mFloatingScores.append(fls.FloatingScore.create(
             text,
             x,
             y,
             fls.ScoreStyle.MiniRed,
+        ));
+    }
+
+    pub fn createSmallWhiteFloatingScore(self: *Self, text: [:0]const u8, x: f32, y: f32) !void {
+        try self.mFloatingScores.append(fls.FloatingScore.create(
+            text,
+            x,
+            y,
+            fls.ScoreStyle.SmallWhite,
         ));
     }
 };

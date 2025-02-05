@@ -161,6 +161,7 @@ fn draw() !void {
         const frameSeqCount = 6;
         const halfFrameSeqCount = frameSeqCount / 2;
         const speedReduceFactor = 10;
+        const scale = 2.0;
 
         _ = idx;
         const realIdx = 0;
@@ -174,7 +175,8 @@ fn draw() !void {
         const xOffset: f32 = @floatFromInt(value * width);
         const yOffset: f32 = @floatFromInt(height * 0);
         view = c.Rectangle{ .x = xOffset, .y = yOffset, .width = width, .height = height };
-        drawTextureScaled(@intFromFloat(inv.mX), @intFromFloat(inv.mY), invader1, view, 2.0);
+        drawTextureScaled(@intFromFloat(inv.mX), @intFromFloat(inv.mY), invader1, view, scale);
+        c.DrawRectangleLines(@intFromFloat(inv.mX), @intFromFloat(inv.mY), width * scale, height * scale, c.RED);
     }
 
     // Enemy projectiles
@@ -215,9 +217,9 @@ fn draw() !void {
 }
 
 fn drawLighteningStrike(fromX: i32, fromY: i32, toX: i32, toY: i32) void {
-    const mainColor = c.WHITE;
-    const pixelSize = 1;
-    const pixelVariationSize = 1;
+    const primaryColor = c.WHITE;
+    const pixelSize = 2;
+    const pixelVariationSize = 2;
 
     var currentX: i32 = fromX;
     var currentY: i32 = fromY;
@@ -247,19 +249,19 @@ fn drawLighteningStrike(fromX: i32, fromY: i32, toX: i32, toY: i32) void {
         currentX = bestX;
         currentY = bestY;
 
-        c.DrawRectangle(currentX - pixelSize, currentY, pixelSize, pixelSize, c.BLUE);
-        c.DrawRectangle(currentX, currentY, pixelSize, pixelSize, mainColor);
-        c.DrawRectangle(currentX + pixelSize, currentY, pixelSize, pixelSize, c.BLUE);
+        //c.DrawRectangle(currentX - pixelSize, currentY, pixelSize, pixelSize, c.BLUE);
+        c.DrawRectangle(currentX, currentY, pixelSize, pixelSize, primaryColor);
+        //c.DrawRectangle(currentX + pixelSize, currentY, pixelSize, pixelSize, c.BLUE);
     }
 
     // Draw start
     c.DrawRectangle(fromX - pixelSize, fromY, pixelSize, pixelSize, c.BLUE);
-    c.DrawRectangle(fromX, fromY, pixelSize, pixelSize, mainColor);
+    c.DrawRectangle(fromX, fromY, pixelSize, pixelSize, primaryColor);
     c.DrawRectangle(fromX + pixelSize, fromY, pixelSize, pixelSize, c.BLUE);
 
     // Draw end
     c.DrawRectangle(toX - pixelSize, toY, pixelSize, pixelSize, c.BLUE);
-    c.DrawRectangle(toX, toY, pixelSize, pixelSize, mainColor);
+    c.DrawRectangle(toX, toY, pixelSize, pixelSize, primaryColor);
     c.DrawRectangle(toX + toY, currentY, pixelSize, pixelSize, c.BLUE);
 }
 
