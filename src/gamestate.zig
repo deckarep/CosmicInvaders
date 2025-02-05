@@ -6,13 +6,14 @@ const cld = @import("cloud.zig");
 const conf = @import("conf.zig");
 const txtrs = @import("textures.zig");
 const fls = @import("floating_scores.zig");
+const bnnr = @import("wave_banner.zig");
 const c = @import("cdefs.zig").c;
 
 pub const GameState = struct {
     mTicks: usize = 0,
-
     mWave: usize = 0,
 
+    mWaveBanner: bnnr.WaveBanner = undefined,
     mHive: hive.Hive = undefined,
     mHiveCooldown: usize = conf.HiveRespawnCooldown,
     mClouds: std.ArrayList(cld.Cloud) = undefined,
@@ -25,6 +26,7 @@ pub const GameState = struct {
 
     pub fn create(allocator: std.mem.Allocator) Self {
         return Self{
+            .mWaveBanner = bnnr.WaveBanner.create(0),
             .mHive = hive.Hive.create(allocator),
             .mClouds = std.ArrayList(cld.Cloud).init(allocator),
             .mEnemyProjectiles = std.ArrayList(proj.Projectile).init(allocator),
@@ -50,6 +52,8 @@ pub const GameState = struct {
             try self.mClouds.append(cld.Cloud.init(txtrs.Textures.Clouds[@intCast(cldIdx)]));
         }
         try self.mHive.init();
+
+        self.mWaveBanner.showWave(self.mWave);
     }
 
     pub fn update(self: *Self) !void {
@@ -61,9 +65,16 @@ pub const GameState = struct {
         // Hive
         try self.mHive.update();
         if (self.mHive.dead()) {
+            // The -5 is for a little wait time before we show the wave banner.
+            if (self.mHiveCooldown == (conf.HiveRespawnCooldown - 5)) {
+                // Bump the wave count, show the banner.
+                // NOTE: This is started on a single cycle.
+                self.mWaveBanner.showWave(self.mWave);
+                self.mWave += 1;
+            }
             self.mHiveCooldown -= 1;
             if (self.mHiveCooldown <= 0) {
-                try self.mHive.reset();
+                try self.mHive.respawn();
                 self.mHiveCooldown = conf.HiveRespawnCooldown;
             }
         }
@@ -100,6 +111,9 @@ pub const GameState = struct {
                 _ = self.mFloatingScores.swapRemove(len - 1);
             }
         }
+
+        // Wave Banner
+        self.mWaveBanner.update();
 
         // Bump ticks.
         self.mTicks += 1;

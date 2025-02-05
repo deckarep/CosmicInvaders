@@ -8,8 +8,6 @@ const txtrs = @import("textures.zig");
 const drw = @import("draw.zig");
 const c = @import("cdefs.zig").c;
 
-// Window includes monitor.
-
 var gpa = std.heap.GeneralPurposeAllocator(.{}){};
 const alloc = gpa.allocator();
 
@@ -76,12 +74,16 @@ var background: c.Texture = undefined;
 var invader1: c.Texture = undefined;
 var turret2: c.Texture = undefined;
 
-var font: c.Font = undefined;
-//var allegFnt: c.Font = undefined;
-
 pub fn main() !void {
     // Prints to stderr (it's a shortcut based on `std.io.getStdErr()`)
     std.debug.print("All your {s} are belong to us.\n", .{"codebase"});
+
+    defer {
+        const deinit_status = gpa.deinit();
+        if (deinit_status == .leak) {
+            std.debug.print("You lack discipline! Leaks detected!\n", .{});
+        }
+    }
 
     //try regenAllBitmaps();
 
@@ -93,8 +95,6 @@ pub fn main() !void {
 
     try loadAssets();
     defer unloadAssets();
-
-    //allegFnt = try drw.loadAllegroFont("data/font_big_red.mz.png", alloc);
 
     state.mGame = state.GameState.create(alloc);
     try state.mGame.init();
@@ -161,10 +161,13 @@ fn draw() !void {
         const frameSeqCount = 6;
         const halfFrameSeqCount = frameSeqCount / 2;
         const speedReduceFactor = 10;
+
+        _ = idx;
+        const realIdx = 0;
         // Division is used to slow the ticks down a bit.
         // Using ticks as a stream of numbers, generates 0-5 inclusive
         // Using the idx, causes the animations to offset by idx number.
-        const phase = (((state.mGame.mTicks) / speedReduceFactor) + idx) % frameSeqCount;
+        const phase = (((state.mGame.mTicks) / speedReduceFactor) + realIdx) % frameSeqCount;
         // Then the upper half of the numbers are subtracted from 6, to create a
         // repeating pattern that goes up and down in sequence.
         const value = if (phase > halfFrameSeqCount) frameSeqCount - phase else phase;
@@ -203,6 +206,9 @@ fn draw() !void {
     drawLighteningStrike(10, 10, 300, 400);
 
     //c.DrawTextEx(font, "WAVE 1", .{ .x = 20, .y = 20 }, 15, 2, conf.FontColor.Red);
+
+    // Wave Banner
+    try state.mGame.mWaveBanner.draw();
 
     c.DrawRectangle(8, conf.WIN_HEIGHT - 20, 80, 40, c.BLACK);
     c.DrawFPS(10, conf.WIN_HEIGHT - 20);

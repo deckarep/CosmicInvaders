@@ -17,6 +17,7 @@ pub const Hive = struct {
     allocator: std.mem.Allocator,
     mInvaders: std.ArrayList(Invader) = undefined,
     mState: HiveState = .Scanning,
+    mRows: usize = 1,
 
     mDirection: f32 = 1,
     mHorizontalSpeed: f32 = 1,
@@ -35,11 +36,12 @@ pub const Hive = struct {
     pub fn init(self: *Self) !void {
         // Create the invaders.
         self.mInvaders = std.ArrayList(Invader).init(self.allocator);
-
-        try self.reset();
     }
 
-    pub fn reset(self: *Self) !void {
+    // TODO: some kind of functions to initialize the invader count, and rows.
+    pub fn respawn(self: *Self) !void {
+        self.mState = .Scanning;
+
         const xOffset = 40;
         const yOffset = 300;
 
@@ -48,7 +50,7 @@ pub const Hive = struct {
         const invXPadding = 4;
         const invYPadding = 4;
 
-        for (0..4) |y| {
+        for (0..self.mRows) |y| {
             for (0..12) |x| {
                 try self.mInvaders.append(Invader{
                     .mX = xOffset + ((invWidth + invXPadding) * @as(f32, @floatFromInt(x))),
@@ -56,6 +58,10 @@ pub const Hive = struct {
                 });
             }
         }
+
+        // Whenever respawn is invoked, we increase the difficulty,
+        // for now bump invader rows.
+        self.mRows += 1;
     }
 
     pub fn deinit(self: *Self) void {
@@ -65,8 +71,6 @@ pub const Hive = struct {
     pub inline fn dead(self: Self) bool {
         return self.mInvaders.items.len == 0;
     }
-
-    // TODO: some kind of functions to initialize the invader count.
 
     pub fn update(self: *Self) !void {
         //if (state.mGame.mTicks % 2 != 0) return;
