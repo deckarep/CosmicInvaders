@@ -53,7 +53,7 @@ pub const GameState = struct {
         }
         try self.mHive.init();
 
-        self.mWaveBanner.showWave(self.mWave);
+        try self.mWaveBanner.showWave(self.mWave);
     }
 
     pub fn update(self: *Self) !void {
@@ -69,7 +69,7 @@ pub const GameState = struct {
             if (self.mHiveCooldown == (conf.HiveRespawnCooldown - 5)) {
                 // Bump the wave count, show the banner.
                 // NOTE: This is started on a single cycle.
-                self.mWaveBanner.showWave(self.mWave);
+                try self.mWaveBanner.showWave(self.mWave);
                 self.mWave += 1;
             }
             self.mHiveCooldown -= 1;
@@ -113,7 +113,7 @@ pub const GameState = struct {
         }
 
         // Wave Banner
-        self.mWaveBanner.update();
+        try self.mWaveBanner.update();
 
         // Bump ticks.
         self.mTicks += 1;

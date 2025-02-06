@@ -20,6 +20,12 @@ pub const WaveBannerState = enum {
 pub const WaveBanner = struct {
     mX: f32 = conf.WIN_WIDTH / 2.0,
     mY: f32 = 0,
+
+    mXScale: f32 = 1.0,
+    mYScale: f32 = 0.1,
+
+    bannerRenderTexture: ?c.RenderTexture = null,
+
     mWaveCount: usize,
     mState: WaveBannerState = .Initial,
     mStateFrames: usize = 0,
@@ -32,14 +38,57 @@ pub const WaveBanner = struct {
         };
     }
 
-    pub fn showWave(self: *Self, waveCount: usize) void {
+    pub fn deinit(self: *Self) void {
+        if (self.bannerRenderTexture) |rt| {
+            c.UnloadRenderTexture(rt);
+        }
+    }
+
+    pub fn showWave(self: *Self, waveCount: usize) !void {
         self.mWaveCount = waveCount;
+        try self.fontToRenderTexture();
         self.mState = .FlyDown;
     }
 
-    pub fn update(self: *Self) void {
+    pub fn fontToRenderTexture(self: *Self) !void {
+        // 1. Clear out old texture if one exists.
+        if (self.bannerRenderTexture) |rt| {
+            c.UnloadRenderTexture(rt);
+        }
+
+        // 2. Clear as fully transparent.
+        c.ClearBackground(c.Color{ .r = 0xff, .g = 0x00, .b = 0x00, .a = 0xff });
+
+        var buf: [16]u8 = undefined;
+        const fontSize = 35;
+        const fontSpacing = 1;
+
+        const text = try std.fmt.bufPrintZ(buf[0..], "WAVE {d}", .{self.mWaveCount + 1});
+        const dims = c.MeasureTextEx(fnts.Font1, text, fontSize, fontSpacing);
+
+        // Create new render texture.
+        self.bannerRenderTexture = c.LoadRenderTexture(@intFromFloat(dims.x), @intFromFloat(dims.y));
+        c.BeginTextureMode(self.bannerRenderTexture.?);
+        defer c.EndTextureMode();
+
+        c.DrawTextEx(
+            fnts.Font1,
+            text,
+            .{
+                // Correct for half the font size, after being measured.
+                .x = 0, //self.mX - (dims.x / 2.0),
+                .y = 0, //self.mY,
+            },
+            fontSize,
+            fontSpacing,
+            conf.FontColor.Red,
+        );
+    }
+
+    pub fn update(self: *Self) !void {
         switch (self.mState) {
             .Initial => {
+                self.mYScale = 0.1;
                 self.mY = 0;
                 self.mStateFrames = 0;
             },
@@ -48,6 +97,12 @@ pub const WaveBanner = struct {
                     @floatFromInt(self.mStateFrames),
                     @floatFromInt(initialPos),
                     @floatFromInt(destPos),
+                    @floatFromInt(duration),
+                );
+                self.mYScale = esngs.easeOutQuart(
+                    @floatFromInt(self.mStateFrames),
+                    0.1,
+                    1.0,
                     @floatFromInt(duration),
                 );
                 if (self.mStateFrames >= duration) {
@@ -72,6 +127,12 @@ pub const WaveBanner = struct {
                     @floatFromInt(-300),
                     @floatFromInt(duration),
                 );
+                self.mYScale = esngs.easeOutQuart(
+                    @floatFromInt(self.mStateFrames),
+                    1.0,
+                    -0.9,
+                    @floatFromInt(duration),
+                );
                 if (self.mStateFrames >= duration) {
                     self.mStateFrames = 0;
                     self.mState = .Initial;
@@ -85,24 +146,24 @@ pub const WaveBanner = struct {
     pub fn draw(self: Self) !void {
         if (self.mState == .Initial) return;
 
-        var buf: [16]u8 = undefined;
-        const fontSize = 50;
-        const fontSpacing = 1;
+        if (self.bannerRenderTexture) |brt| {
+            const rtWidth: f32 = @floatFromInt(brt.texture.width);
+            const rtHeight: f32 = @floatFromInt(brt.texture.height);
+            const src = c.Rectangle{ .x = 0, .y = 0, .width = rtWidth, .height = -rtHeight };
+            const dst = c.Rectangle{ .x = 0, .y = 0, .width = rtWidth, .height = rtHeight * self.mYScale };
 
-        const text = try std.fmt.bufPrintZ(buf[0..], "WAVE {d}", .{self.mWaveCount + 1});
-        const dims = c.MeasureTextEx(fnts.Font1, text, fontSize, fontSpacing);
-
-        c.DrawTextEx(
-            fnts.Font1,
-            text,
-            .{
-                // Correct for half the font size, after being measured.
-                .x = self.mX - (dims.x / 2.0),
-                .y = self.mY,
-            },
-            fontSize,
-            fontSpacing,
-            conf.FontColor.Red,
-        );
+            c.DrawTexturePro(
+                brt.texture,
+                src,
+                dst,
+                // With render texture everything has to be negated.
+                c.Vector2{
+                    .x = (-conf.WIN_WIDTH / 2.0) + (@as(f32, rtWidth) / 2.0),
+                    .y = -self.mY,
+                },
+                0,
+                c.WHITE,
+            );
+        }
     }
 };
