@@ -6,6 +6,7 @@ const esngs = @import("easings.zig");
 const state = @import("gamestate.zig");
 
 const duration = 30;
+
 const initialPos = 0;
 const destPos = 200;
 const returnPos = -400;
@@ -13,7 +14,9 @@ const returnPos = -400;
 pub const WaveBannerState = enum {
     Initial,
     FlyDown,
-    Mid,
+    ScaleUp,
+    Stable,
+    ScaleDn,
     FlyUp,
 };
 
@@ -22,7 +25,7 @@ pub const WaveBanner = struct {
     mY: f32 = 0,
 
     mXScale: f32 = 1.0,
-    mYScale: f32 = 0.1,
+    mYScale: f32 = 0.0,
 
     bannerRenderTexture: ?c.RenderTexture = null,
 
@@ -85,10 +88,19 @@ pub const WaveBanner = struct {
         );
     }
 
+    fn pumpFrames(self: *Self, dur: usize, targetState: WaveBannerState) void {
+        if (self.mStateFrames >= dur) {
+            self.mStateFrames = 0;
+            self.mState = targetState;
+        } else {
+            self.mStateFrames += 1;
+        }
+    }
+
     pub fn update(self: *Self) !void {
         switch (self.mState) {
             .Initial => {
-                self.mYScale = 0.1;
+                self.mYScale = 0.0;
                 self.mY = 0;
                 self.mStateFrames = 0;
             },
@@ -99,46 +111,44 @@ pub const WaveBanner = struct {
                     @floatFromInt(destPos),
                     @floatFromInt(duration),
                 );
-                self.mYScale = esngs.easeOutQuart(
+                self.pumpFrames(duration, .ScaleUp);
+            },
+            .ScaleUp => {
+                const start = 0.0;
+                const end = 1.0 - start;
+                self.mYScale = esngs.easeOutCubic(
                     @floatFromInt(self.mStateFrames),
-                    0.1,
-                    1.0,
+                    start,
+                    end,
                     @floatFromInt(duration),
                 );
-                if (self.mStateFrames >= duration) {
-                    self.mStateFrames = 0;
-                    self.mState = .Mid;
-                } else {
-                    self.mStateFrames += 1;
-                }
+                self.pumpFrames(duration, .Stable);
             },
-            .Mid => {
-                if (self.mStateFrames >= duration) {
-                    self.mState = .FlyUp;
-                    self.mStateFrames = 0;
-                } else {
-                    self.mStateFrames += 1;
-                }
+            .Stable => {
+                self.mYScale = 1.0;
+                self.pumpFrames(duration + 30, .ScaleDn);
+            },
+            .ScaleDn => {
+                const start = 1.0;
+                const end = 0.0 - start;
+                self.mYScale = esngs.easeOutCubic(
+                    @floatFromInt(self.mStateFrames),
+                    start,
+                    end,
+                    @floatFromInt(duration),
+                );
+                self.pumpFrames(duration, .FlyUp);
             },
             .FlyUp => {
+                const start = destPos;
+                const end = -40 - start;
                 self.mY = esngs.easeOutCubic(
                     @floatFromInt(self.mStateFrames),
-                    @floatFromInt(destPos),
-                    @floatFromInt(-300),
+                    @floatFromInt(start),
+                    @floatFromInt(end),
                     @floatFromInt(duration),
                 );
-                self.mYScale = esngs.easeOutQuart(
-                    @floatFromInt(self.mStateFrames),
-                    1.0,
-                    -0.9,
-                    @floatFromInt(duration),
-                );
-                if (self.mStateFrames >= duration) {
-                    self.mStateFrames = 0;
-                    self.mState = .Initial;
-                } else {
-                    self.mStateFrames += 1;
-                }
+                self.pumpFrames(duration, .Initial);
             },
         }
     }

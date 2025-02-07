@@ -3,6 +3,7 @@ const state = @import("gamestate.zig");
 const conf = @import("conf.zig");
 const txtrs = @import("textures.zig");
 const prj = @import("projectile.zig");
+const esngs = @import("easings.zig");
 const c = @import("cdefs.zig").c;
 
 const invWidth = 16 * 2;
@@ -12,8 +13,19 @@ pub const HiveBoundsMargin = 10;
 
 pub const HiveState = enum {
     Scanning, // horizontal movement in either direction (left or right)
-    Descending, // ticking closer to player
+    Descending, // ticking closer to player1
     Attack,
+    Swapping, // A test, a state where they will periodically swap around using easing funcs.
+};
+
+pub const InvaderSwaps = struct {
+    a: ?*Invader = undefined,
+    aX: f32 = 0,
+    aY: f32 = 0,
+
+    b: ?*Invader = undefined,
+    bX: f32 = 0,
+    bY: f32 = 0,
 };
 
 pub const Hive = struct {
@@ -27,6 +39,10 @@ pub const Hive = struct {
     mDescendingSpeed: f32 = 1,
     mDescendCountdown: i32 = conf.DescendCountdown,
     mAttackCountdown: i32 = conf.AttackCooldown,
+    mSwapCountdown: i32 = conf.SwapCooldown,
+    mStateFrames: usize = 0,
+
+    mInvaderSwaps: InvaderSwaps = .{},
 
     const Self = @This();
 
@@ -73,6 +89,37 @@ pub const Hive = struct {
         return self.mInvaders.items.len == 0;
     }
 
+    fn chooseTwoInvaders(self: *Self) void {
+        // For now just pick two random invaders and swap them.
+        const invTotal = self.mInvaders.items.len - 1;
+        const randInvIdx: usize = @intCast(c.GetRandomValue(0, @intCast(invTotal)));
+        self.mInvaderSwaps.a = &self.mInvaders.items[randInvIdx];
+        self.mInvaderSwaps.aX = self.mInvaderSwaps.a.?.mX;
+        self.mInvaderSwaps.aY = self.mInvaderSwaps.a.?.mY;
+
+        var randInv2Idx: usize = randInvIdx;
+        while (randInvIdx == randInv2Idx) {
+            const newIdx: usize = @intCast(c.GetRandomValue(0, @intCast(invTotal)));
+            self.mInvaderSwaps.b = &self.mInvaders.items[newIdx];
+            self.mInvaderSwaps.bX = self.mInvaderSwaps.b.?.mX;
+            self.mInvaderSwaps.bY = self.mInvaderSwaps.b.?.mY;
+            randInv2Idx += 1;
+            if (randInv2Idx > (invTotal - 1)) {
+                randInv2Idx = 0;
+            }
+        }
+    }
+
+    fn pumpFrames(self: *Self, dur: usize, targetState: HiveState) bool {
+        if (self.mStateFrames >= dur) {
+            self.mStateFrames = 0;
+            self.mState = targetState;
+            return true;
+        }
+        self.mStateFrames += 1;
+        return false;
+    }
+
     pub fn update(self: *Self) !void {
         //if (state.mGame.mTicks % 2 != 0) return;
         if (self.mInvaders.items.len == 0) {
@@ -108,11 +155,19 @@ pub const Hive = struct {
                     }
                 }
 
+                // Bump attack countdown.
                 self.mAttackCountdown -= 1;
-
                 if (self.mAttackCountdown <= 0) {
                     self.mState = .Attack;
                     self.mAttackCountdown = conf.AttackCooldown;
+                }
+
+                // Bump swap countdown.
+                self.mSwapCountdown -= 1;
+                if (self.mSwapCountdown <= 0) {
+                    self.chooseTwoInvaders();
+                    self.mState = .Swapping;
+                    self.mSwapCountdown = conf.SwapCooldown;
                 }
             },
             .Descending => {
@@ -150,6 +205,44 @@ pub const Hive = struct {
                 if (self.mDescendCountdown <= 0) {
                     self.mDirection *= -1;
                     self.mState = .Scanning;
+                }
+            },
+            .Swapping => {
+                const is = &self.mInvaderSwaps;
+                const invA = self.mInvaderSwaps.a.?;
+                const invB = self.mInvaderSwaps.b.?;
+
+                // Move Invader A
+                invA.mX = esngs.easeInOutCubic(
+                    @floatFromInt(self.mStateFrames),
+                    is.aX,
+                    is.bX - is.aX,
+                    @floatFromInt(30),
+                );
+                invA.mY = esngs.easeInOutCubic(
+                    @floatFromInt(self.mStateFrames),
+                    is.aY,
+                    is.bY - is.aY,
+                    @floatFromInt(30),
+                );
+
+                // Move Invader B
+                invB.mX = esngs.easeInOutCubic(
+                    @floatFromInt(self.mStateFrames),
+                    is.bX,
+                    is.aX - is.bX,
+                    @floatFromInt(30),
+                );
+                invB.mY = esngs.easeInOutCubic(
+                    @floatFromInt(self.mStateFrames),
+                    is.bY,
+                    is.aY - is.bY,
+                    @floatFromInt(30),
+                );
+
+                if (self.pumpFrames(30, .Scanning)) {
+                    is.a = null;
+                    is.b = null;
                 }
             },
             .Attack => {
