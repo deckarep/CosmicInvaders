@@ -307,11 +307,11 @@ pub const InvaderState = enum(u8) {
 pub const Invader = struct {
     mX: f32 = 0,
     mY: f32 = 0,
-    mHits: usize = 3,
+    mHits: usize = 2,
 
     mFlickerCount: usize = FlickerFrames,
     mState: InvaderState = .Ok,
-    mYOffset: f32 = 0,
+    mViewYOffset: f32 = 0,
 
     // If null, invader is not dead.
     mDeathReason: ?InvaderDeathReason = null,
@@ -322,11 +322,11 @@ pub const Invader = struct {
     pub fn update(self: *Self) void {
         switch (self.mState) {
             .Ok => {
-                self.mYOffset = 0;
+                self.mViewYOffset = 0;
             },
             .Damaged => {
                 // BUG: for some reason I don't always see the flicker render.
-                self.mYOffset = if (self.mFlickerCount % 3 == 0) 0 else 1;
+                self.mViewYOffset = if (self.mFlickerCount % 3 == 0) 0 else 1;
 
                 if (self.mFlickerCount <= 0) {
                     self.mFlickerCount = FlickerFrames;
@@ -336,7 +336,7 @@ pub const Invader = struct {
                 }
             },
             .Marked => {
-                self.mYOffset = 2;
+                self.mViewYOffset = 2;
             },
         }
     }
@@ -357,7 +357,7 @@ pub const Invader = struct {
         // repeating pattern that goes up and down in sequence.
         const value = if (phase > halfFrameSeqCount) frameSeqCount - phase else phase;
         const xOffset: f32 = @floatFromInt(value * width);
-        const yOffset: f32 = @as(f32, @floatFromInt(height)) * self.mYOffset;
+        const yOffset: f32 = @as(f32, @floatFromInt(height)) * self.mViewYOffset;
 
         const view = c.Rectangle{
             .x = xOffset,
