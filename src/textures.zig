@@ -5,6 +5,8 @@ pub const Textures = struct {
     pub var Clouds: [5]c.Texture = undefined;
     pub var AlienBullet: c.Texture = undefined;
 
+    pub var Invader1: c.Texture = undefined;
+
     pub var Canon: c.Texture = undefined;
     pub var LaserSm: c.Texture = undefined;
     pub var LaserMed: c.Texture = undefined;

@@ -71,7 +71,6 @@ fn color24Eq(a: zigimg.color.Rgb24, b: zigimg.color.Rgb24) bool {
 }
 
 var background: c.Texture = undefined;
-var invader1: c.Texture = undefined;
 var turret2: c.Texture = undefined;
 
 pub fn main() !void {
@@ -113,6 +112,8 @@ fn loadAssets() !void {
     txtrs.Textures.Clouds[3] = c.LoadTexture("data/cloud4.mz.png");
     txtrs.Textures.Clouds[4] = c.LoadTexture("data/cloud5.mz.png");
 
+    txtrs.Textures.Invader1 = c.LoadTexture("data/invader1.sz.png");
+
     txtrs.Textures.Canon = c.LoadTexture("data/turret1.sz.png");
     txtrs.Textures.LaserSm = c.LoadTexture("data/laser_small.mz.png");
     txtrs.Textures.LaserMed = c.LoadTexture("data/laser_medium.mz.png");
@@ -120,7 +121,6 @@ fn loadAssets() !void {
     txtrs.Textures.Effects.Poof = c.LoadTexture("data/poof.sz.png");
 
     background = c.LoadTexture("data/bg.mz.png");
-    invader1 = c.LoadTexture("data/invader1.sz.png");
     turret2 = c.LoadTexture("data/turret2.mz.png");
     txtrs.Textures.Fonts.Font1 = c.LoadFont("data/font_big_red_xna.png");
 }
@@ -130,13 +130,13 @@ fn unloadAssets() void {
         c.UnloadTexture(cloud);
     }
 
+    c.UnloadTexture(txtrs.Textures.Invader1);
     c.UnloadTexture(txtrs.Textures.Canon);
     c.UnloadTexture(txtrs.Textures.LaserSm);
     c.UnloadTexture(txtrs.Textures.LaserMed);
     c.UnloadTexture(txtrs.Textures.AlienBullet);
     c.UnloadTexture(txtrs.Textures.Effects.Poof);
     c.UnloadTexture(background);
-    c.UnloadTexture(invader1);
     c.UnloadTexture(turret2);
     c.UnloadFont(txtrs.Textures.Fonts.Font1);
 }
@@ -162,31 +162,6 @@ fn draw() !void {
 
     // TODO: move all drawing code above into gamestate.draw like below.
     try state.mGame.draw();
-
-    // Invaders
-    for (state.mGame.mHive.mInvaders.items, 0..) |inv, idx| {
-        const width = 16;
-        const height = 13;
-        const frameSeqCount = 6;
-        const halfFrameSeqCount = frameSeqCount / 2;
-        const speedReduceFactor = 10;
-        const scale = 2.0;
-
-        _ = idx;
-        const realIdx = 0;
-        // Division is used to slow the ticks down a bit.
-        // Using ticks as a stream of numbers, generates 0-5 inclusive
-        // Using the idx, causes the animations to offset by idx number.
-        const phase = (((state.mGame.mTicks) / speedReduceFactor) + realIdx) % frameSeqCount;
-        // Then the upper half of the numbers are subtracted from 6, to create a
-        // repeating pattern that goes up and down in sequence.
-        const value = if (phase > halfFrameSeqCount) frameSeqCount - phase else phase;
-        const xOffset: f32 = @floatFromInt(value * width);
-        const yOffset: f32 = @floatFromInt(height * 0);
-        view = c.Rectangle{ .x = xOffset, .y = yOffset, .width = width, .height = height };
-        drawTextureScaled(@intFromFloat(inv.mX), @intFromFloat(inv.mY), invader1, view, scale);
-        c.DrawRectangleLines(@intFromFloat(inv.mX), @intFromFloat(inv.mY), width * scale, height * scale, c.RED);
-    }
 
     // Enemy projectiles
     for (state.mGame.mEnemyProjectiles.items) |prj| {

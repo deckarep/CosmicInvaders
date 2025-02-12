@@ -3,6 +3,7 @@ const state = @import("gamestate.zig");
 const conf = @import("conf.zig");
 const txtrs = @import("textures.zig");
 const prj = @import("projectile.zig");
+const drw = @import("draw.zig");
 const esngs = @import("easings.zig");
 const c = @import("cdefs.zig").c;
 
@@ -62,7 +63,7 @@ pub const Hive = struct {
         self.mState = .Scanning;
 
         const xOffset = 40;
-        const yOffset = 300;
+        const yOffset = 100;
 
         const invXPadding = 4;
         const invYPadding = 4;
@@ -110,6 +111,24 @@ pub const Hive = struct {
         }
     }
 
+    pub fn cullInvaders(self: *Self) !void {
+        var len = self.mInvaders.items.len;
+        while (len != 0) : (len -= 1) {
+            const currInv = self.mInvaders.items[len - 1];
+            if (currInv.dead()) {
+                // When invader is dead, spawn a poof explosion as well as a -1 red mini score.
+                try state.mGame.createPoofExplosion(currInv.mX, currInv.mY);
+
+                switch (currInv.mDeathReason.?) {
+                    .HitGround => try state.mGame.createMiniRedFloatingScore("-1", currInv.mX, currInv.mY),
+                    .PlayerProjectile => try state.mGame.createSmallWhiteFloatingScore("+20", currInv.mX, currInv.mY),
+                }
+
+                _ = self.mInvaders.swapRemove(len - 1);
+            }
+        }
+    }
+
     fn pumpFrames(self: *Self, dur: usize, targetState: HiveState) bool {
         if (self.mStateFrames >= dur) {
             self.mStateFrames = 0;
@@ -118,6 +137,43 @@ pub const Hive = struct {
         }
         self.mStateFrames += 1;
         return false;
+    }
+
+    pub fn getBounds(self: Self) c.Rectangle {
+
+        // Determine the bounds of the entire swarm.
+        var minX: f32 = std.math.floatMax(f32);
+        var maxX: f32 = -std.math.floatMin(f32);
+
+        var minY: f32 = std.math.floatMax(f32);
+        var maxY: f32 = -std.math.floatMin(f32);
+
+        for (self.mInvaders.items) |*inv| {
+            // Capture x-axis bounds.
+            if (inv.mX < minX) {
+                minX = inv.mX;
+            }
+            // NOTE: the right side of the bounds should also include the width of the invader.
+            if (inv.mX + invWidth > maxX) {
+                maxX = inv.mX + invWidth;
+            }
+
+            // Capture y-axis bounds.
+            if (inv.mY < minY) {
+                minY = inv.mY;
+            }
+            // NOTE: the right side of the bounds should also include the height of the invader.
+            if (inv.mY + invHeight > maxY) {
+                maxY = inv.mY + invHeight;
+            }
+        }
+
+        return c.Rectangle{
+            .x = minX,
+            .y = minY,
+            .width = maxX - minX,
+            .height = maxY - minY,
+        };
     }
 
     pub fn update(self: *Self) !void {
@@ -130,22 +186,11 @@ pub const Hive = struct {
         switch (self.mState) {
             .Scanning => {
                 // Determine the bounds of the entire swarm.
-                var minX: f32 = std.math.floatMax(f32);
-                var maxX: f32 = -std.math.floatMin(f32);
-
-                for (self.mInvaders.items) |*inv| {
-                    if (inv.mX < minX) {
-                        minX = inv.mX;
-                    }
-                    // NOTE: the right side of the bounds should also include the width of the invader.
-                    if (inv.mX + invWidth > maxX) {
-                        maxX = inv.mX + invWidth;
-                    }
-                }
+                const hb = self.getBounds();
 
                 // Check if moving the entire swarm would exceed boundaries.
-                if (maxX + self.mHorizontalSpeed * self.mDirection > (conf.WIN_WIDTH - HiveBoundsMargin) or
-                    (minX + self.mHorizontalSpeed * self.mDirection) < HiveBoundsMargin)
+                if ((hb.x + hb.width) + self.mHorizontalSpeed * self.mDirection > (conf.WIN_WIDTH - HiveBoundsMargin) or
+                    (hb.x + self.mHorizontalSpeed * self.mDirection) < HiveBoundsMargin)
                 {
                     self.mDescendCountdown = conf.DescendCountdown;
                     self.mState = .Descending;
@@ -178,7 +223,7 @@ pub const Hive = struct {
                     inv.mY += self.mDescendingSpeed;
 
                     if (inv.mY >= conf.LAND_HEIGHT) {
-                        inv.deathReason = .HitGround;
+                        inv.mDeathReason = .HitGround;
                         purgeOneOrMoreDead = true;
                     }
                 }
@@ -186,21 +231,7 @@ pub const Hive = struct {
                 // During the descent, one or more invaders died and need to be
                 // purged from the hive. The hive does not tolerate death!
                 if (purgeOneOrMoreDead) {
-                    var len = self.mInvaders.items.len;
-                    while (len != 0) : (len -= 1) {
-                        const currInv = self.mInvaders.items[len - 1];
-                        if (currInv.dead()) {
-                            // When invader is dead, spawn a poof explosion as well as a -1 red mini score.
-                            try state.mGame.createPoofExplosion(currInv.mX, currInv.mY);
-
-                            switch (currInv.deathReason.?) {
-                                .HitGround => try state.mGame.createMiniRedFloatingScore("-1", currInv.mX, currInv.mY),
-                                .PlayerProjectile => try state.mGame.createSmallWhiteFloatingScore("+20", currInv.mX, currInv.mY),
-                            }
-
-                            _ = self.mInvaders.swapRemove(len - 1);
-                        }
-                    }
+                    try self.cullInvaders();
                 }
 
                 self.mDescendCountdown -= 1;
@@ -267,15 +298,108 @@ pub const InvaderDeathReason = enum(u8) {
     PlayerProjectile,
 };
 
+pub const InvaderState = enum(u8) {
+    Ok,
+    Damaged,
+};
+
 pub const Invader = struct {
     mX: f32 = 0,
     mY: f32 = 0,
-    // If null, player is not dead.
-    deathReason: ?InvaderDeathReason = null,
+    mHits: usize = 3,
 
+    mFlickerCount: usize = FlickerFrames,
+    mState: InvaderState = .Ok,
+    mYOffset: f32 = 0,
+
+    // If null, invader is not dead.
+    mDeathReason: ?InvaderDeathReason = null,
+
+    const FlickerFrames = 5;
     const Self = @This();
 
+    pub fn update(self: *Self) void {
+        switch (self.mState) {
+            .Ok => {
+                self.mYOffset = 0;
+            },
+            .Damaged => {
+                // BUG: for some reason I don't always see the flicker render.
+                self.mYOffset = if (self.mFlickerCount % 2 == 0) 0 else 1;
+
+                if (self.mFlickerCount <= 0) {
+                    self.mFlickerCount = FlickerFrames;
+                    self.mState = .Ok;
+                } else {
+                    self.mFlickerCount -= 1;
+                }
+            },
+        }
+    }
+
+    pub fn draw(self: Self) void {
+        const width = 16;
+        const height = 13;
+        const frameSeqCount = 6;
+        const halfFrameSeqCount = frameSeqCount / 2;
+        const speedReduceFactor = 10;
+        const scale = 2.0;
+
+        // Division is used to slow the ticks down a bit.
+        // Using ticks as a stream of numbers, generates 0-5 inclusive
+        // Using the idx, causes the animations to offset by idx number.
+        const phase = (((state.mGame.mTicks) / speedReduceFactor)) % frameSeqCount;
+        // Then the upper half of the numbers are subtracted from 6, to create a
+        // repeating pattern that goes up and down in sequence.
+        const value = if (phase > halfFrameSeqCount) frameSeqCount - phase else phase;
+        const xOffset: f32 = @floatFromInt(value * width);
+        const yOffset: f32 = @as(f32, @floatFromInt(height)) * self.mYOffset;
+
+        const view = c.Rectangle{
+            .x = xOffset,
+            .y = yOffset,
+            .width = width,
+            .height = height,
+        };
+
+        drw.drawTextureScaled(
+            self.mX,
+            self.mY,
+            txtrs.Textures.Invader1,
+            view,
+            scale,
+        );
+
+        //c.DrawRectangleLines(@intFromFloat(inv.mX), @intFromFloat(inv.mY), width * scale, height * scale, c.RED);
+    }
+
     pub inline fn dead(self: Self) bool {
-        return self.deathReason != null;
+        return self.mDeathReason != null;
+    }
+
+    pub fn checkHit(self: *Self, projBounds: c.Rectangle) bool {
+        const invBounds = c.Rectangle{
+            .x = self.mX,
+            .y = self.mY,
+            .width = invWidth,
+            .height = invHeight,
+        };
+
+        const collided = c.CheckCollisionRecs(projBounds, invBounds);
+        if (collided) {
+            self.mHits -= 1;
+
+            // Put the invader into damaged mode.
+            self.mState = .Damaged;
+
+            if (self.mHits == 0) {
+                std.debug.print("TODO: invader was killed\n", .{});
+                self.mDeathReason = .PlayerProjectile;
+            } else {
+                std.debug.print("TODO: invader was hit, hits remaining: {d}\n", .{self.mHits});
+            }
+        }
+
+        return collided;
     }
 };

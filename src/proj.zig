@@ -11,7 +11,9 @@ pub const Proj = struct {
     updateFn: *const fn (*anyopaque) anyerror!void,
     drawFn: *const fn (*anyopaque) anyerror!void,
     getPosFn: *const fn (*anyopaque) c.Vector2,
+    getBoundsFn: *const fn (*anyopaque) c.Rectangle,
     isDeadFn: *const fn (*anyopaque) bool,
+    markDeadFn: *const fn (*anyopaque) void,
 
     pub inline fn deinit(self: Proj) void {
         return self.deinitFn(self.ptr);
@@ -27,6 +29,14 @@ pub const Proj = struct {
 
     pub inline fn getPos(self: Proj) c.Vector2 {
         return self.getPosFn(self.ptr);
+    }
+
+    pub inline fn getBounds(self: Proj) c.Rectangle {
+        return self.getBoundsFn(self.ptr);
+    }
+
+    pub inline fn markDead(self: Proj) void {
+        self.markDeadFn(self.ptr);
     }
 
     pub inline fn isDead(self: Proj) bool {
@@ -68,14 +78,55 @@ pub const CanonBullet = struct {
         const self: *CanonBullet = @alignCast(@ptrCast(ptr));
         if (self.mDead) return;
 
-        // TODO: only LaserSm is hardcoded, when upgraded do the medium one.
-        const view = c.Rectangle{ .x = 0, .y = 0, .width = 1, .height = 11 };
-        drw.drawTextureScaled(self.mX, self.mY, txtrs.Textures.LaserSm, view, 2.0);
+        const selectedTexture = txtrs.Textures.LaserSm;
+        const tw = selectedTexture.width;
+        const th = selectedTexture.height;
+
+        // TODO: only LaserSm is hardcoded: When upgraded, use the LaserMed texture.
+        const view = c.Rectangle{
+            .x = 0,
+            .y = 0,
+            .width = @floatFromInt(tw),
+            .height = @floatFromInt(th),
+        };
+
+        drw.drawTextureScaled(self.mX, self.mY, selectedTexture, view, 2.0);
+
+        // Draw red bounding box.
+        const scale = 2;
+        c.DrawRectangleLines(
+            @intFromFloat(self.mX),
+            @intFromFloat(self.mY),
+            tw * scale,
+            th * scale,
+            c.RED,
+        );
     }
 
     pub fn getPos(ptr: *anyopaque) c.Vector2 {
         const self: *CanonBullet = @alignCast(@ptrCast(ptr));
         return c.Vector2{ .x = self.mX, .y = self.mY };
+    }
+
+    pub fn getBounds(ptr: *anyopaque) c.Rectangle {
+        const self: *CanonBullet = @alignCast(@ptrCast(ptr));
+
+        const selectedTexture = txtrs.Textures.LaserSm;
+        const tw: f32 = @floatFromInt(selectedTexture.width);
+        const th: f32 = @floatFromInt(selectedTexture.height);
+        const scale = 2.0;
+
+        return c.Rectangle{
+            .x = self.mX,
+            .y = self.mY,
+            .width = tw * scale,
+            .height = th * scale,
+        };
+    }
+
+    pub fn markDead(ptr: *anyopaque) void {
+        const self: *CanonBullet = @alignCast(@ptrCast(ptr));
+        self.mDead = true;
     }
 
     pub fn isDead(ptr: *anyopaque) bool {
@@ -92,7 +143,10 @@ pub const CanonBullet = struct {
             .drawFn = draw,
 
             .getPosFn = getPos,
+            .getBoundsFn = getBounds,
+
             .isDeadFn = isDead,
+            .markDeadFn = markDead,
         };
     }
 };

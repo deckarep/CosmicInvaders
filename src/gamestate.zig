@@ -78,7 +78,7 @@ pub const GameState = struct {
             cloud.update();
         }
 
-        // Hive
+        // Hive (as a whole)
         try self.mHive.update();
         if (self.mHive.dead()) {
             // The -5 is for a little wait time before we show the wave banner.
@@ -95,6 +95,11 @@ pub const GameState = struct {
             }
         }
 
+        // Invaders
+        for (self.mHive.mInvaders.items) |*inv| {
+            inv.update();
+        }
+
         // Enemy projectiles
         var len = self.mEnemyProjectiles.items.len;
         while (len > 0) : (len -= 1) {
@@ -109,8 +114,34 @@ pub const GameState = struct {
         // Player projectiles
         len = self.mPlayerProjectiles.items.len;
         while (len > 0) : (len -= 1) {
-            var currProj = &self.mPlayerProjectiles.items[len - 1];
+            var currProj = self.mPlayerProjectiles.items[len - 1];
+            // 1. Update projectile.
             try currProj.update();
+
+            // 2. Check on collision.
+            const projBounds = currProj.getBounds();
+            const hb = self.mHive.getBounds();
+
+            // 2.a First check if colliding with hive in order to skip checking
+            // projectiles blatantly out of range.
+            if (c.CheckCollisionRecs(projBounds, hb)) {
+                // 2.b Find out which invader was hit.
+                var anyDead = false;
+                for (self.mHive.mInvaders.items) |*inv| {
+                    if (inv.checkHit(projBounds)) {
+                        currProj.markDead();
+                    }
+                    if (inv.dead()) {
+                        anyDead = true;
+                    }
+                }
+                if (anyDead) {
+                    // 2.c Mark this projectile as dead and cull dead invaders.
+                    try self.mHive.cullInvaders();
+                }
+            }
+
+            // 3. Check on dead (ground hit, out of bounds or marked from above code)
             if (currProj.isDead()) {
                 currProj.deinit();
                 _ = self.mPlayerProjectiles.swapRemove(len - 1);
@@ -157,9 +188,25 @@ pub const GameState = struct {
             try station.draw();
         }
 
+        // Invaders
+        for (self.mHive.mInvaders.items) |*inv| {
+            inv.draw();
+        }
+
         // Player projectiles
         for (self.mPlayerProjectiles.items) |p| {
             try p.draw();
+        }
+
+        const hb = self.mHive.getBounds();
+        if (hb.x >= 0 and hb.y >= 0 and hb.width >= 0 and hb.height >= 0) {
+            c.DrawRectangleLines(
+                @intFromFloat(hb.x),
+                @intFromFloat(hb.y),
+                @intFromFloat(hb.width),
+                @intFromFloat(hb.height),
+                c.YELLOW,
+            );
         }
     }
 

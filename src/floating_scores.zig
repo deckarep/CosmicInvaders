@@ -11,7 +11,7 @@ pub const ScoreStyle = enum {
 pub const FloatingScore = struct {
     mX: f32 = 0,
     mY: f32 = 0,
-    mLifetime: usize = 30,
+    mLifetime: usize = 60,
     mText: [:0]const u8,
     mKind: ScoreStyle,
 
