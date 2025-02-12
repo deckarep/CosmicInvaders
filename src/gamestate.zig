@@ -1,15 +1,18 @@
 const std = @import("std");
 const hive = @import("hive.zig");
 const proj = @import("projectile.zig");
+const pj = @import("proj.zig");
 const exp = @import("explosion.zig");
 const cld = @import("cloud.zig");
 const conf = @import("conf.zig");
 const txtrs = @import("textures.zig");
 const fls = @import("floating_scores.zig");
 const bnnr = @import("wave_banner.zig");
+const wp = @import("weapon_station.zig");
 const c = @import("cdefs.zig").c;
 
 pub const GameState = struct {
+    mAllocator: std.mem.Allocator,
     mTicks: usize = 0,
     mWave: usize = 0,
 
@@ -19,20 +22,23 @@ pub const GameState = struct {
     mClouds: std.ArrayList(cld.Cloud) = undefined,
     mFloatingScores: std.ArrayList(fls.FloatingScore) = undefined,
     mEnemyProjectiles: std.ArrayList(proj.Projectile) = undefined,
-    mPlayerProjectiles: std.ArrayList(proj.Projectile) = undefined,
+    mPlayerProjectiles: std.ArrayList(pj.Proj) = undefined,
     mInplaceExplosions: std.ArrayList(exp.Explosion) = undefined,
+    mWeaponStations: std.ArrayList(wp.WeaponStation) = undefined,
 
     const Self = @This();
 
     pub fn create(allocator: std.mem.Allocator) Self {
         return Self{
+            .mAllocator = allocator,
             .mWaveBanner = bnnr.WaveBanner.create(0),
             .mHive = hive.Hive.create(allocator),
             .mClouds = std.ArrayList(cld.Cloud).init(allocator),
             .mEnemyProjectiles = std.ArrayList(proj.Projectile).init(allocator),
-            .mPlayerProjectiles = std.ArrayList(proj.Projectile).init(allocator),
+            .mPlayerProjectiles = std.ArrayList(pj.Proj).init(allocator),
             .mInplaceExplosions = std.ArrayList(exp.Explosion).init(allocator),
             .mFloatingScores = std.ArrayList(fls.FloatingScore).init(allocator),
+            .mWeaponStations = std.ArrayList(wp.WeaponStation).init(allocator),
         };
     }
 
@@ -40,9 +46,16 @@ pub const GameState = struct {
         self.mHive.deinit();
         self.mClouds.deinit();
         self.mEnemyProjectiles.deinit();
+
+        // Heap allocated.
+        for (self.mPlayerProjectiles.items) |p| {
+            p.deinit();
+        }
         self.mPlayerProjectiles.deinit();
+
         self.mInplaceExplosions.deinit();
         self.mFloatingScores.deinit();
+        self.mWeaponStations.deinit();
     }
 
     pub fn init(self: *Self) !void {
@@ -54,6 +67,9 @@ pub const GameState = struct {
         try self.mHive.init();
 
         try self.mWaveBanner.showWave(self.mWave);
+
+        // For now just create a single weapon to start with.
+        try self.mWeaponStations.append(wp.WeaponStation.create(wp.WeaponStationKind.Canon));
     }
 
     pub fn update(self: *Self) !void {
@@ -90,6 +106,17 @@ pub const GameState = struct {
             }
         }
 
+        // Player projectiles
+        len = self.mPlayerProjectiles.items.len;
+        while (len > 0) : (len -= 1) {
+            var currProj = &self.mPlayerProjectiles.items[len - 1];
+            try currProj.update();
+            if (currProj.isDead()) {
+                currProj.deinit();
+                _ = self.mPlayerProjectiles.swapRemove(len - 1);
+            }
+        }
+
         // Explosions
         len = self.mInplaceExplosions.items.len;
         while (len > 0) : (len -= 1) {
@@ -112,11 +139,28 @@ pub const GameState = struct {
             }
         }
 
+        // Weapon Stations
+        for (self.mWeaponStations.items) |*station| {
+            try station.update();
+        }
+
         // Wave Banner
         try self.mWaveBanner.update();
 
         // Bump ticks.
         self.mTicks += 1;
+    }
+
+    pub fn draw(self: Self) !void {
+        // Weapon Stations
+        for (self.mWeaponStations.items) |*station| {
+            try station.draw();
+        }
+
+        // Player projectiles
+        for (self.mPlayerProjectiles.items) |p| {
+            try p.draw();
+        }
     }
 
     pub fn createPoofExplosion(self: *Self, x: f32, y: f32) !void {
@@ -139,6 +183,12 @@ pub const GameState = struct {
             y,
             fls.ScoreStyle.SmallWhite,
         ));
+    }
+
+    pub fn spawnCanonBullet(self: *Self, x: f32, y: f32) !void {
+        const cBullet = try pj.CanonBullet.create(x, y, self.mAllocator);
+        const p = cBullet.asProjectile();
+        try self.mPlayerProjectiles.append(p);
     }
 };
 

@@ -113,6 +113,9 @@ fn loadAssets() !void {
     txtrs.Textures.Clouds[3] = c.LoadTexture("data/cloud4.mz.png");
     txtrs.Textures.Clouds[4] = c.LoadTexture("data/cloud5.mz.png");
 
+    txtrs.Textures.Canon = c.LoadTexture("data/turret1.sz.png");
+    txtrs.Textures.LaserSm = c.LoadTexture("data/laser_small.mz.png");
+    txtrs.Textures.LaserMed = c.LoadTexture("data/laser_medium.mz.png");
     txtrs.Textures.AlienBullet = c.LoadTexture("data/alienbullet.sz.png");
     txtrs.Textures.Effects.Poof = c.LoadTexture("data/poof.sz.png");
 
@@ -127,6 +130,9 @@ fn unloadAssets() void {
         c.UnloadTexture(cloud);
     }
 
+    c.UnloadTexture(txtrs.Textures.Canon);
+    c.UnloadTexture(txtrs.Textures.LaserSm);
+    c.UnloadTexture(txtrs.Textures.LaserMed);
     c.UnloadTexture(txtrs.Textures.AlienBullet);
     c.UnloadTexture(txtrs.Textures.Effects.Poof);
     c.UnloadTexture(background);
@@ -153,6 +159,9 @@ fn draw() !void {
     for (state.mGame.mClouds.items) |*cloud| {
         cloud.draw();
     }
+
+    // TODO: move all drawing code above into gamestate.draw like below.
+    try state.mGame.draw();
 
     // Invaders
     for (state.mGame.mHive.mInvaders.items, 0..) |inv, idx| {

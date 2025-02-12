@@ -32,7 +32,7 @@ pub const Hive = struct {
     allocator: std.mem.Allocator,
     mInvaders: std.ArrayList(Invader) = undefined,
     mState: HiveState = .Scanning,
-    mRows: usize = 4,
+    mRows: usize = 1,
 
     mDirection: f32 = 1,
     mHorizontalSpeed: f32 = 1,
@@ -163,11 +163,13 @@ pub const Hive = struct {
                 }
 
                 // Bump swap countdown.
-                self.mSwapCountdown -= 1;
-                if (self.mSwapCountdown <= 0) {
-                    self.chooseTwoInvaders();
-                    self.mState = .Swapping;
-                    self.mSwapCountdown = conf.SwapCooldown;
+                if (conf.SwapEnabled) {
+                    self.mSwapCountdown -= 1;
+                    if (self.mSwapCountdown <= 0) {
+                        self.chooseTwoInvaders();
+                        self.mState = .Swapping;
+                        self.mSwapCountdown = conf.SwapCooldown;
+                    }
                 }
             },
             .Descending => {
@@ -212,14 +214,16 @@ pub const Hive = struct {
                 const invA = self.mInvaderSwaps.a.?;
                 const invB = self.mInvaderSwaps.b.?;
 
+                const easeFn = esngs.easeInOutBounce;
+
                 // Move Invader A
-                invA.mX = esngs.easeInOutCubic(
+                invA.mX = easeFn(
                     @floatFromInt(self.mStateFrames),
                     is.aX,
                     is.bX - is.aX,
                     @floatFromInt(30),
                 );
-                invA.mY = esngs.easeInOutCubic(
+                invA.mY = easeFn(
                     @floatFromInt(self.mStateFrames),
                     is.aY,
                     is.bY - is.aY,
@@ -227,13 +231,13 @@ pub const Hive = struct {
                 );
 
                 // Move Invader B
-                invB.mX = esngs.easeInOutCubic(
+                invB.mX = easeFn(
                     @floatFromInt(self.mStateFrames),
                     is.bX,
                     is.aX - is.bX,
                     @floatFromInt(30),
                 );
-                invB.mY = esngs.easeInOutCubic(
+                invB.mY = easeFn(
                     @floatFromInt(self.mStateFrames),
                     is.bY,
                     is.aY - is.bY,
