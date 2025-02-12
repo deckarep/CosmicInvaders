@@ -299,8 +299,9 @@ pub const InvaderDeathReason = enum(u8) {
 };
 
 pub const InvaderState = enum(u8) {
-    Ok,
-    Damaged,
+    Ok, // Initial state, green no damage yet.
+    Damaged, // When a projectile hits.
+    Marked, // Hit at least once, marked and vulnerable.
 };
 
 pub const Invader = struct {
@@ -315,7 +316,7 @@ pub const Invader = struct {
     // If null, invader is not dead.
     mDeathReason: ?InvaderDeathReason = null,
 
-    const FlickerFrames = 5;
+    const FlickerFrames = 10;
     const Self = @This();
 
     pub fn update(self: *Self) void {
@@ -325,14 +326,17 @@ pub const Invader = struct {
             },
             .Damaged => {
                 // BUG: for some reason I don't always see the flicker render.
-                self.mYOffset = if (self.mFlickerCount % 2 == 0) 0 else 1;
+                self.mYOffset = if (self.mFlickerCount % 3 == 0) 0 else 1;
 
                 if (self.mFlickerCount <= 0) {
                     self.mFlickerCount = FlickerFrames;
-                    self.mState = .Ok;
+                    self.mState = .Marked;
                 } else {
                     self.mFlickerCount -= 1;
                 }
+            },
+            .Marked => {
+                self.mYOffset = 2;
             },
         }
     }
