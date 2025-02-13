@@ -22,7 +22,8 @@ pub const Textures = struct {
     };
 
     pub const Sfx = struct {
-        // TODO
+        pub var LaserFire: c.Sound = undefined;
+        pub var LaserHit: c.Sound = undefined;
     };
 
     pub const Music = struct {

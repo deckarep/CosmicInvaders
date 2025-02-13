@@ -42,6 +42,7 @@ pub const WeaponStation = struct {
                 if (shouldFire) {
                     const x = self.mX + ((29 * 2) / 2);
                     try state.mGame.spawnCanonBullet(x, self.mY);
+                    c.PlaySound(txtrs.Textures.Sfx.LaserFire);
                     self.mBulletCountdown = conf.CanonCooldown;
                 }
             },

@@ -106,6 +106,7 @@ pub fn main() !void {
 }
 
 fn loadAssets() !void {
+    // Textures
     txtrs.Textures.Clouds[0] = c.LoadTexture("data/cloud1.mz.png");
     txtrs.Textures.Clouds[1] = c.LoadTexture("data/cloud2.mz.png");
     txtrs.Textures.Clouds[2] = c.LoadTexture("data/cloud3.mz.png");
@@ -122,10 +123,17 @@ fn loadAssets() !void {
 
     background = c.LoadTexture("data/bg.mz.png");
     turret2 = c.LoadTexture("data/turret2.mz.png");
+
+    // Fonts
     txtrs.Textures.Fonts.Font1 = c.LoadFont("data/font_big_red_xna.png");
+
+    // Sfx
+    txtrs.Textures.Sfx.LaserFire = c.LoadSound("data/zoop.wav");
+    txtrs.Textures.Sfx.LaserHit = c.LoadSound("data/laserhit.wav");
 }
 
 fn unloadAssets() void {
+    // Texture
     for (txtrs.Textures.Clouds) |cloud| {
         c.UnloadTexture(cloud);
     }
@@ -138,7 +146,13 @@ fn unloadAssets() void {
     c.UnloadTexture(txtrs.Textures.Effects.Poof);
     c.UnloadTexture(background);
     c.UnloadTexture(turret2);
+
+    // Font
     c.UnloadFont(txtrs.Textures.Fonts.Font1);
+
+    // Sfx
+    c.UnloadSound(txtrs.Textures.Sfx.LaserFire);
+    c.UnloadSound(txtrs.Textures.Sfx.LaserHit);
 }
 
 fn update() !void {

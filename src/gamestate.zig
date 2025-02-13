@@ -129,6 +129,7 @@ pub const GameState = struct {
                 var anyDead = false;
                 for (self.mHive.mInvaders.items) |*inv| {
                     if (inv.checkHit(projBounds)) {
+                        c.PlaySound(txtrs.Textures.Sfx.LaserHit);
                         currProj.markDead();
                     }
                     if (inv.dead()) {
