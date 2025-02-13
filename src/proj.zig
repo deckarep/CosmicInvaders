@@ -1,7 +1,7 @@
 const std = @import("std");
 const c = @import("cdefs.zig").c;
 const conf = @import("conf.zig");
-const txtrs = @import("textures.zig");
+const res = @import("resources.zig");
 const drw = @import("draw.zig");
 
 pub const Proj = struct {
@@ -78,7 +78,7 @@ pub const CanonBullet = struct {
         const self: *CanonBullet = @alignCast(@ptrCast(ptr));
         if (self.mDead) return;
 
-        const selectedTexture = txtrs.Textures.LaserSm;
+        const selectedTexture = res.Resources.LaserSm;
         const tw = selectedTexture.width;
         const th = selectedTexture.height;
 
@@ -111,7 +111,7 @@ pub const CanonBullet = struct {
     pub fn getBounds(ptr: *anyopaque) c.Rectangle {
         const self: *CanonBullet = @alignCast(@ptrCast(ptr));
 
-        const selectedTexture = txtrs.Textures.LaserSm;
+        const selectedTexture = res.Resources.LaserSm;
         const tw: f32 = @floatFromInt(selectedTexture.width);
         const th: f32 = @floatFromInt(selectedTexture.height);
         const scale = 2.0;

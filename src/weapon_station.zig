@@ -2,7 +2,7 @@ const std = @import("std");
 const state = @import("gamestate.zig");
 const c = @import("cdefs.zig").c;
 const drw = @import("draw.zig");
-const txtrs = @import("textures.zig");
+const res = @import("resources.zig");
 const conf = @import("conf.zig");
 
 pub const WeaponStationKind = enum(u8) {
@@ -42,7 +42,7 @@ pub const WeaponStation = struct {
                 if (shouldFire) {
                     const x = self.mX + ((29 * 2) / 2);
                     try state.mGame.spawnCanonBullet(x, self.mY);
-                    c.PlaySound(txtrs.Textures.Sfx.LaserFire);
+                    c.PlaySound(res.Resources.Sfx.LaserFire);
                     self.mBulletCountdown = conf.CanonCooldown;
                 }
             },
@@ -91,7 +91,7 @@ pub const WeaponStation = struct {
                 drw.drawTextureScaled(
                     self.mX,
                     self.mY,
-                    txtrs.Textures.Canon,
+                    res.Resources.Canon,
                     view,
                     2.0,
                 );

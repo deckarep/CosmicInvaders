@@ -1,7 +1,7 @@
 const c = @import("cdefs.zig").c;
 const conf = @import("conf.zig");
 const drw = @import("draw.zig");
-const fnts = @import("textures.zig").Textures.Fonts;
+const fnts = @import("resources.zig").Resources.Fonts;
 
 pub const ScoreStyle = enum {
     MiniRed,

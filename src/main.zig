@@ -4,7 +4,7 @@ const conf = @import("conf.zig");
 const zigimg = @import("zigimg");
 const hive = @import("hive.zig");
 const exp = @import("explosion.zig");
-const txtrs = @import("textures.zig");
+const res = @import("resources.zig");
 const drw = @import("draw.zig");
 const c = @import("cdefs.zig").c;
 
@@ -107,52 +107,52 @@ pub fn main() !void {
 
 fn loadAssets() !void {
     // Textures
-    txtrs.Textures.Clouds[0] = c.LoadTexture("data/cloud1.mz.png");
-    txtrs.Textures.Clouds[1] = c.LoadTexture("data/cloud2.mz.png");
-    txtrs.Textures.Clouds[2] = c.LoadTexture("data/cloud3.mz.png");
-    txtrs.Textures.Clouds[3] = c.LoadTexture("data/cloud4.mz.png");
-    txtrs.Textures.Clouds[4] = c.LoadTexture("data/cloud5.mz.png");
+    res.Resources.Clouds[0] = c.LoadTexture("data/cloud1.mz.png");
+    res.Resources.Clouds[1] = c.LoadTexture("data/cloud2.mz.png");
+    res.Resources.Clouds[2] = c.LoadTexture("data/cloud3.mz.png");
+    res.Resources.Clouds[3] = c.LoadTexture("data/cloud4.mz.png");
+    res.Resources.Clouds[4] = c.LoadTexture("data/cloud5.mz.png");
 
-    txtrs.Textures.Invader1 = c.LoadTexture("data/invader1.sz.png");
+    res.Resources.Invader1 = c.LoadTexture("data/invader1.sz.png");
 
-    txtrs.Textures.Canon = c.LoadTexture("data/turret1.sz.png");
-    txtrs.Textures.LaserSm = c.LoadTexture("data/laser_small.mz.png");
-    txtrs.Textures.LaserMed = c.LoadTexture("data/laser_medium.mz.png");
-    txtrs.Textures.AlienBullet = c.LoadTexture("data/alienbullet.sz.png");
-    txtrs.Textures.Effects.Poof = c.LoadTexture("data/poof.sz.png");
+    res.Resources.Canon = c.LoadTexture("data/turret1.sz.png");
+    res.Resources.LaserSm = c.LoadTexture("data/laser_small.mz.png");
+    res.Resources.LaserMed = c.LoadTexture("data/laser_medium.mz.png");
+    res.Resources.AlienBullet = c.LoadTexture("data/alienbullet.sz.png");
+    res.Resources.Effects.Poof = c.LoadTexture("data/poof.sz.png");
 
     background = c.LoadTexture("data/bg.mz.png");
     turret2 = c.LoadTexture("data/turret2.mz.png");
 
     // Fonts
-    txtrs.Textures.Fonts.Font1 = c.LoadFont("data/font_big_red_xna.png");
+    res.Resources.Fonts.Font1 = c.LoadFont("data/font_big_red_xna.png");
 
     // Sfx
-    txtrs.Textures.Sfx.LaserFire = c.LoadSound("data/zoop.wav");
-    txtrs.Textures.Sfx.LaserHit = c.LoadSound("data/laserhit.wav");
+    res.Resources.Sfx.LaserFire = c.LoadSound("data/zoop.wav");
+    res.Resources.Sfx.LaserHit = c.LoadSound("data/laserhit.wav");
 }
 
 fn unloadAssets() void {
     // Texture
-    for (txtrs.Textures.Clouds) |cloud| {
+    for (res.Resources.Clouds) |cloud| {
         c.UnloadTexture(cloud);
     }
 
-    c.UnloadTexture(txtrs.Textures.Invader1);
-    c.UnloadTexture(txtrs.Textures.Canon);
-    c.UnloadTexture(txtrs.Textures.LaserSm);
-    c.UnloadTexture(txtrs.Textures.LaserMed);
-    c.UnloadTexture(txtrs.Textures.AlienBullet);
-    c.UnloadTexture(txtrs.Textures.Effects.Poof);
+    c.UnloadTexture(res.Resources.Invader1);
+    c.UnloadTexture(res.Resources.Canon);
+    c.UnloadTexture(res.Resources.LaserSm);
+    c.UnloadTexture(res.Resources.LaserMed);
+    c.UnloadTexture(res.Resources.AlienBullet);
+    c.UnloadTexture(res.Resources.Effects.Poof);
     c.UnloadTexture(background);
     c.UnloadTexture(turret2);
 
     // Font
-    c.UnloadFont(txtrs.Textures.Fonts.Font1);
+    c.UnloadFont(res.Resources.Fonts.Font1);
 
     // Sfx
-    c.UnloadSound(txtrs.Textures.Sfx.LaserFire);
-    c.UnloadSound(txtrs.Textures.Sfx.LaserHit);
+    c.UnloadSound(res.Resources.Sfx.LaserFire);
+    c.UnloadSound(res.Resources.Sfx.LaserHit);
 }
 
 fn update() !void {
@@ -189,7 +189,7 @@ fn draw() !void {
         const xOffset: f32 = @floatFromInt(value * w);
         const yOffset: f32 = @floatFromInt(h * 0);
         view = c.Rectangle{ .x = xOffset, .y = yOffset, .width = 5, .height = 5 };
-        drw.drawTextureScaled(prj.mX, prj.mY, txtrs.Textures.AlienBullet, view, 2.0);
+        drw.drawTextureScaled(prj.mX, prj.mY, res.Resources.AlienBullet, view, 2.0);
     }
 
     // Explosions

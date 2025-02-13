@@ -1,7 +1,7 @@
 const std = @import("std");
 const c = @import("cdefs.zig").c;
 const conf = @import("conf.zig");
-const fnts = @import("textures.zig").Textures.Fonts;
+const fnts = @import("resources.zig").Resources.Fonts;
 const esngs = @import("easings.zig");
 const state = @import("gamestate.zig");
 

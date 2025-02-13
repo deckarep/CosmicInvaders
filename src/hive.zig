@@ -1,7 +1,7 @@
 const std = @import("std");
 const state = @import("gamestate.zig");
 const conf = @import("conf.zig");
-const txtrs = @import("textures.zig");
+const res = @import("resources.zig");
 const prj = @import("projectile.zig");
 const drw = @import("draw.zig");
 const esngs = @import("easings.zig");
@@ -369,7 +369,7 @@ pub const Invader = struct {
         drw.drawTextureScaled(
             self.mX,
             self.mY,
-            txtrs.Textures.Invader1,
+            res.Resources.Invader1,
             view,
             scale,
         );

@@ -5,7 +5,7 @@ const pj = @import("proj.zig");
 const exp = @import("explosion.zig");
 const cld = @import("cloud.zig");
 const conf = @import("conf.zig");
-const txtrs = @import("textures.zig");
+const res = @import("resources.zig");
 const fls = @import("floating_scores.zig");
 const bnnr = @import("wave_banner.zig");
 const wp = @import("weapon_station.zig");
@@ -61,8 +61,8 @@ pub const GameState = struct {
     pub fn init(self: *Self) !void {
         // Create some clouds.
         for (0..conf.NumClouds) |_| {
-            const cldIdx = c.GetRandomValue(0, txtrs.Textures.Clouds.len - 1);
-            try self.mClouds.append(cld.Cloud.init(txtrs.Textures.Clouds[@intCast(cldIdx)]));
+            const cldIdx = c.GetRandomValue(0, res.Resources.Clouds.len - 1);
+            try self.mClouds.append(cld.Cloud.init(res.Resources.Clouds[@intCast(cldIdx)]));
         }
         try self.mHive.init();
 
@@ -129,7 +129,7 @@ pub const GameState = struct {
                 var anyDead = false;
                 for (self.mHive.mInvaders.items) |*inv| {
                     if (inv.checkHit(projBounds)) {
-                        c.PlaySound(txtrs.Textures.Sfx.LaserHit);
+                        c.PlaySound(res.Resources.Sfx.LaserHit);
                         currProj.markDead();
                     }
                     if (inv.dead()) {
@@ -212,7 +212,7 @@ pub const GameState = struct {
     }
 
     pub fn createPoofExplosion(self: *Self, x: f32, y: f32) !void {
-        try self.mInplaceExplosions.append(exp.Explosion.create(x, y, txtrs.Textures.Effects.Poof));
+        try self.mInplaceExplosions.append(exp.Explosion.create(x, y, res.Resources.Effects.Poof));
     }
 
     pub fn createMiniRedFloatingScore(self: *Self, text: [:0]const u8, x: f32, y: f32) !void {

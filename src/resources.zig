@@ -1,7 +1,7 @@
 const c = @import("cdefs.zig").c;
 
 // TODO: Call this Assets, since now it's holding Fonts and probably other Raylib junk.
-pub const Textures = struct {
+pub const Resources = struct {
     pub var Clouds: [5]c.Texture = undefined;
     pub var AlienBullet: c.Texture = undefined;
 
