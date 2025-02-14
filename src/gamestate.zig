@@ -104,7 +104,20 @@ pub const GameState = struct {
         var len = self.mEnemyProjectiles.items.len;
         while (len > 0) : (len -= 1) {
             var currProj = &self.mEnemyProjectiles.items[len - 1];
+            // 1. Update projectile.
             currProj.update();
+
+            // 2. Check on collision w/ weapon station.
+            for (self.mWeaponStations.items) |*ws| {
+                const projBounds = currProj.getBounds();
+                if (ws.checkHit(projBounds, 20)) {
+                    try self.createPoofExplosion(currProj.mX, currProj.mY);
+                    _ = self.mEnemyProjectiles.swapRemove(len - 1);
+                    break;
+                }
+            }
+
+            // 3. Check on collision w/ land.
             if (currProj.mY >= conf.LAND_HEIGHT) {
                 try self.createPoofExplosion(currProj.mX, currProj.mY);
                 _ = self.mEnemyProjectiles.swapRemove(len - 1);

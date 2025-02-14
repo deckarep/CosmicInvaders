@@ -397,10 +397,7 @@ pub const Invader = struct {
             self.mState = .Damaged;
 
             if (self.mHits == 0) {
-                std.debug.print("TODO: invader was killed\n", .{});
                 self.mDeathReason = .PlayerProjectile;
-            } else {
-                std.debug.print("TODO: invader was hit, hits remaining: {d}\n", .{self.mHits});
             }
         }
 

@@ -12,7 +12,7 @@ pub const HiveRespawnCooldown = 60 * 2;
 pub const NumClouds = 6;
 pub const DescendCountdown = 10;
 pub const AttackCooldown = 60;
-pub const SwapEnabled = true;
+pub const SwapEnabled = false;
 pub const SwapCooldown = 120;
 
 pub const EnemyProjectileYSpeed = 2;

@@ -1,5 +1,7 @@
 const conf = @import("conf.zig");
+const c = @import("cdefs.zig").c;
 const state = @import("gamestate.zig");
+const res = @import("resources.zig");
 
 pub const Projectile = struct {
     fixedX: f32 = 0,
@@ -15,6 +17,17 @@ pub const Projectile = struct {
         return Self{
             .fixedX = x,
             .mY = y,
+        };
+    }
+
+    pub fn getBounds(self: Self) c.Rectangle {
+        const scale = 2.0;
+
+        return c.Rectangle{
+            .x = self.mX,
+            .y = self.mY,
+            .width = @as(f32, @floatFromInt(res.Resources.AlienBullet.width)) * scale,
+            .height = @as(f32, @floatFromInt(res.Resources.AlienBullet.height)) * scale,
         };
     }
 
