@@ -106,6 +106,10 @@ pub fn main() !void {
 }
 
 fn loadAssets() !void {
+    // TODO: move these into the resources.zig file.
+    background = c.LoadTexture("data/bg.mz.png");
+    turret2 = c.LoadTexture("data/turret2.mz.png");
+
     // Textures
     res.Resources.Clouds[0] = c.LoadTexture("data/cloud1.mz.png");
     res.Resources.Clouds[1] = c.LoadTexture("data/cloud2.mz.png");
@@ -119,10 +123,11 @@ fn loadAssets() !void {
     res.Resources.LaserSm = c.LoadTexture("data/laser_small.mz.png");
     res.Resources.LaserMed = c.LoadTexture("data/laser_medium.mz.png");
     res.Resources.AlienBullet = c.LoadTexture("data/alienbullet.sz.png");
-    res.Resources.Effects.Poof = c.LoadTexture("data/poof.sz.png");
 
-    background = c.LoadTexture("data/bg.mz.png");
-    turret2 = c.LoadTexture("data/turret2.mz.png");
+    // Effects
+    res.Resources.Effects.Poof = c.LoadTexture("data/poof.sz.png");
+    res.Resources.Effects.Puff1 = c.LoadTexture("data/puff1.sz.png");
+    res.Resources.Effects.Puff2 = c.LoadTexture("data/puff2.sz.png");
 
     // Fonts
     res.Resources.Fonts.Font1 = c.LoadFont("data/font_big_red_xna.png");
@@ -133,6 +138,10 @@ fn loadAssets() !void {
 }
 
 fn unloadAssets() void {
+    // TODO: this needs moving.
+    c.UnloadTexture(background);
+    c.UnloadTexture(turret2);
+
     // Texture
     for (res.Resources.Clouds) |cloud| {
         c.UnloadTexture(cloud);
@@ -143,9 +152,11 @@ fn unloadAssets() void {
     c.UnloadTexture(res.Resources.LaserSm);
     c.UnloadTexture(res.Resources.LaserMed);
     c.UnloadTexture(res.Resources.AlienBullet);
+
+    // Effects
     c.UnloadTexture(res.Resources.Effects.Poof);
-    c.UnloadTexture(background);
-    c.UnloadTexture(turret2);
+    c.UnloadTexture(res.Resources.Effects.Puff1);
+    c.UnloadTexture(res.Resources.Effects.Puff2);
 
     // Font
     c.UnloadFont(res.Resources.Fonts.Font1);

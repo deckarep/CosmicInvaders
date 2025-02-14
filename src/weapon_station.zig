@@ -124,12 +124,26 @@ pub const WeaponStation = struct {
         if (c.CheckCollisionRecs(projBounds, self.getBounds())) {
             self.mHealth -= amount;
 
-            // TODO change state: (flash or flicker red for a few frames)
-            std.debug.print("weapon station hit: {d}\n", .{self.mHealth});
             return true;
         }
 
         return false;
+    }
+
+    fn drawPuff(self: Self, bounds: c.Rectangle) void {
+        _ = self;
+        const numFrames = 7;
+        const frameIdx: f32 = @as(f32, @floatFromInt((state.mGame.mTicks / 4) % (numFrames)));
+        const w: f32 = 11;
+        const h: f32 = @floatFromInt(res.Resources.Effects.Puff1.height);
+        const view = c.Rectangle{ .x = frameIdx * w, .y = 0, .width = w, .height = h };
+        drw.drawTextureScaled(
+            bounds.x + bounds.width - 20,
+            bounds.y - 10,
+            res.Resources.Effects.Puff1,
+            view,
+            2.0,
+        );
     }
 
     fn drawHealth(self: Self, bounds: c.Rectangle) void {
@@ -179,6 +193,11 @@ pub const WeaponStation = struct {
                 );
 
                 const bounds = self.getBounds();
+
+                // Draw low damage puff indicator when health is below threshold.
+                if (self.mHealth <= 33) {
+                    self.drawPuff(bounds);
+                }
 
                 // Draw health box.
                 self.drawHealth(bounds);

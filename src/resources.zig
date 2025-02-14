@@ -14,6 +14,8 @@ pub const Resources = struct {
     // Collision effects
     pub const Effects = struct {
         pub var Poof: c.Texture = undefined;
+        pub var Puff1: c.Texture = undefined;
+        pub var Puff2: c.Texture = undefined;
     };
 
     // Game Fonts.
