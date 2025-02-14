@@ -11,6 +11,8 @@ const bnnr = @import("wave_banner.zig");
 const wp = @import("weapon_station.zig");
 const c = @import("cdefs.zig").c;
 
+pub var mGame: GameState = undefined;
+
 pub const GameState = struct {
     mAllocator: std.mem.Allocator,
     mTicks: usize = 0,
@@ -113,6 +115,7 @@ pub const GameState = struct {
                 if (ws.checkHit(projBounds, 20)) {
                     try self.createPoofExplosion(currProj.mX, currProj.mY);
                     _ = self.mEnemyProjectiles.swapRemove(len - 1);
+                    std.debug.print("enemy proj hit a station\n", .{});
                     break;
                 }
             }
@@ -121,6 +124,7 @@ pub const GameState = struct {
             if (currProj.mY >= conf.LAND_HEIGHT) {
                 try self.createPoofExplosion(currProj.mX, currProj.mY);
                 _ = self.mEnemyProjectiles.swapRemove(len - 1);
+                std.debug.print("enemy proj hit ground\n", .{});
             }
         }
 
@@ -185,8 +189,14 @@ pub const GameState = struct {
         }
 
         // Weapon Stations
-        for (self.mWeaponStations.items) |*station| {
-            try station.update();
+        len = self.mWeaponStations.items.len;
+        while (len > 0) : (len -= 1) {
+            var currWS = &self.mWeaponStations.items[len - 1];
+            try currWS.update();
+
+            if (currWS.dead()) {
+                _ = self.mWeaponStations.swapRemove(len - 1);
+            }
         }
 
         // Wave Banner
@@ -252,5 +262,3 @@ pub const GameState = struct {
         try self.mPlayerProjectiles.append(p);
     }
 };
-
-pub var mGame: GameState = undefined;
