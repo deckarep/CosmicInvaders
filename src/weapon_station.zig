@@ -13,9 +13,9 @@ pub const WeaponStationKind = enum(u8) {
 
 pub const StationCondition = enum(u8) {
     New,
-    LowHealth,
-    Exploding,
-    Dead,
+    Firing,
+    Exploding, // Show explosion, various fire-balls and sharapnel.
+    Dead, // Actually reap the object.
 };
 
 pub const WeaponStation = struct {
@@ -112,6 +112,7 @@ pub const WeaponStation = struct {
 
     pub fn repair(self: *Self) void {
         self.mHealth = 100;
+        self.mCondition = .New;
     }
 
     pub inline fn dead(self: Self) bool {
@@ -130,23 +131,28 @@ pub const WeaponStation = struct {
         return false;
     }
 
-    fn drawPuff(self: Self, bounds: c.Rectangle) void {
-        _ = self;
+    fn drawSmokePlume(self: Self, bounds: c.Rectangle) void {
+        if (self.mHealth > 33) return;
+
+        // The smoke plume animates faster as health decreases.
+        const speed: usize = @intFromFloat(std.math.lerp(2.0, 15.0, @as(f32, @floatFromInt(self.mHealth)) / 100.0));
+
         const numFrames = 7;
-        const frameIdx: f32 = @as(f32, @floatFromInt((state.mGame.mTicks / 4) % (numFrames)));
+        const frameIdx: f32 = @as(f32, @floatFromInt((state.mGame.mTicks / speed) % (numFrames)));
         const w: f32 = 11;
-        const h: f32 = @floatFromInt(res.Resources.Effects.Puff1.height);
+        const h: f32 = @floatFromInt(res.Resources.Effects.Puff2.height);
         const view = c.Rectangle{ .x = frameIdx * w, .y = 0, .width = w, .height = h };
         drw.drawTextureScaled(
-            bounds.x + bounds.width - 20,
-            bounds.y - 10,
-            res.Resources.Effects.Puff1,
+            // NOTE: the frameIdx is also used to offset the x/y anchor a tad as the animation progresses.
+            bounds.x + bounds.width - 25 + frameIdx,
+            bounds.y - 10 - (frameIdx * 2),
+            res.Resources.Effects.Puff2,
             view,
             2.0,
         );
     }
 
-    fn drawHealth(self: Self, bounds: c.Rectangle) void {
+    fn drawHealthBar(self: Self, bounds: c.Rectangle) void {
         // Draw health box.
         const health = (@as(f32, @floatFromInt(self.mHealth)) * bounds.width) / 100.0;
 
@@ -195,12 +201,10 @@ pub const WeaponStation = struct {
                 const bounds = self.getBounds();
 
                 // Draw low damage puff indicator when health is below threshold.
-                if (self.mHealth <= 33) {
-                    self.drawPuff(bounds);
-                }
+                self.drawSmokePlume(bounds);
 
                 // Draw health box.
-                self.drawHealth(bounds);
+                self.drawHealthBar(bounds);
 
                 // Draw hit box
                 c.DrawRectangleLines(

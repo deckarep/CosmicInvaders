@@ -3,6 +3,7 @@ const c = @import("cdefs.zig").c;
 const conf = @import("conf.zig");
 const res = @import("resources.zig");
 const drw = @import("draw.zig");
+const state = @import("gamestate.zig");
 
 pub const Proj = struct {
     ptr: *anyopaque,
@@ -44,39 +45,151 @@ pub const Proj = struct {
     }
 };
 
-pub const CanonBullet = struct {
+pub const BaseProjectile = struct {
     mAllocator: std.mem.Allocator,
     mX: f32 = 0,
     mY: f32 = 0,
-    mDead: bool = false,
+    mDead: bool,
 
-    pub fn create(x: f32, y: f32, allocator: std.mem.Allocator) !*CanonBullet {
-        const bullet = try allocator.create(CanonBullet);
-        bullet.mAllocator = allocator;
-        bullet.mX = x;
-        bullet.mY = y;
-        return bullet;
+    const Self = @This();
+
+    inline fn init(self: *Self, x: f32, y: f32, allocator: std.mem.Allocator) void {
+        self.mAllocator = allocator;
+        self.mX = x;
+        self.mY = y;
+        self.mDead = false;
     }
 
-    pub fn deinit(ptr: *anyopaque) void {
-        const self: *CanonBullet = @alignCast(@ptrCast(ptr));
-        self.mAllocator.destroy(self);
-    }
-
-    pub fn update(ptr: *anyopaque) anyerror!void {
-        const self: *CanonBullet = @alignCast(@ptrCast(ptr));
-        if (self.mDead) return;
-
-        self.mY -= 4;
-
+    inline fn update(self: *Self) void {
         // Check when out of bounds.
         if (self.mY < 0 or self.mY > conf.WIN_HEIGHT) self.mDead = true;
         if (self.mX < 0 or self.mX > conf.WIN_WIDTH) self.mDead = true;
     }
 
+    inline fn markDead(self: *Self) void {
+        self.mDead = true;
+    }
+
+    inline fn isDead(self: *Self) bool {
+        return self.mDead;
+    }
+
+    inline fn getPos(self: *Self) c.Vector2 {
+        return c.Vector2{ .x = self.mX, .y = self.mY };
+    }
+};
+
+pub const AlienBullet = struct {
+    base: BaseProjectile,
+    mfixedX: f32 = 0,
+
+    const Self = @This();
+
+    pub fn create(x: f32, y: f32, allocator: std.mem.Allocator) !*AlienBullet {
+        const bullet = try allocator.create(AlienBullet);
+        bullet.base.init(x, y, allocator);
+        bullet.mfixedX = x; // <-- anchor around this x.
+        return bullet;
+    }
+
+    pub fn deinit(ptr: *anyopaque) void {
+        const self: *Self = @alignCast(@ptrCast(ptr));
+        self.base.mAllocator.destroy(self);
+    }
+
+    pub fn update(ptr: *anyopaque) anyerror!void {
+        const self: *Self = @alignCast(@ptrCast(ptr));
+        if (self.base.isDead()) return;
+
+        self.base.update();
+
+        self.base.mY += conf.EnemyProjectileYSpeed;
+
+        const amplitude = 30.0;
+        const frequency = 1.0 / 15.0; // adjust this to get the desired period
+        self.base.mX = self.mfixedX + amplitude * @sin(@as(f32, @floatFromInt(state.mGame.mTicks)) * frequency);
+    }
+
     pub fn draw(ptr: *anyopaque) anyerror!void {
-        const self: *CanonBullet = @alignCast(@ptrCast(ptr));
-        if (self.mDead) return;
+        const self: *Self = @alignCast(@ptrCast(ptr));
+        if (self.base.isDead()) return;
+
+        // TODO
+    }
+
+    pub fn markDead(ptr: *anyopaque) void {
+        const self: *Self = @alignCast(@ptrCast(ptr));
+        self.base.markDead();
+    }
+
+    pub fn isDead(ptr: *anyopaque) bool {
+        const self: *Self = @alignCast(@ptrCast(ptr));
+        return self.base.isDead();
+    }
+
+    pub fn getPos(ptr: *anyopaque) c.Vector2 {
+        const self: *Self = @alignCast(@ptrCast(ptr));
+        return self.base.getPos();
+    }
+
+    pub fn getBounds(ptr: *anyopaque) c.Rectangle {
+        const self: *Self = @alignCast(@ptrCast(ptr));
+
+        const scale = 2.0;
+
+        return c.Rectangle{
+            .x = self.base.mX,
+            .y = self.base.mY,
+            .width = @as(f32, @floatFromInt(res.Resources.AlienBullet.width)) * scale,
+            .height = @as(f32, @floatFromInt(res.Resources.AlienBullet.height)) * scale,
+        };
+    }
+
+    pub fn asProjectile(self: *Self) Proj {
+        return Proj{
+            .ptr = self,
+
+            .deinitFn = deinit,
+            .updateFn = update,
+            .drawFn = draw,
+
+            .getPosFn = getPos,
+            .getBoundsFn = getBounds,
+
+            .isDeadFn = isDead,
+            .markDeadFn = markDead,
+        };
+    }
+};
+
+pub const CanonBullet = struct {
+    base: BaseProjectile,
+
+    const Self = @This();
+
+    pub fn create(x: f32, y: f32, allocator: std.mem.Allocator) !*Self {
+        const bullet = try allocator.create(Self);
+        bullet.base.init(x, y, allocator);
+        return bullet;
+    }
+
+    pub fn deinit(ptr: *anyopaque) void {
+        const self: *Self = @alignCast(@ptrCast(ptr));
+        self.base.mAllocator.destroy(self);
+    }
+
+    pub fn update(ptr: *anyopaque) anyerror!void {
+        const self: *Self = @alignCast(@ptrCast(ptr));
+        if (self.base.isDead()) return;
+
+        self.base.update();
+
+        self.base.mY -= 6;
+    }
+
+    pub fn draw(ptr: *anyopaque) anyerror!void {
+        const self: *Self = @alignCast(@ptrCast(ptr));
+        if (self.base.isDead()) return;
 
         const selectedTexture = res.Resources.LaserSm;
         const tw = selectedTexture.width;
@@ -90,26 +203,36 @@ pub const CanonBullet = struct {
             .height = @floatFromInt(th),
         };
 
-        drw.drawTextureScaled(self.mX, self.mY, selectedTexture, view, 2.0);
+        drw.drawTextureScaled(self.base.mX, self.base.mY, selectedTexture, view, 2.0);
 
         // Draw red bounding box.
         const scale = 2;
         c.DrawRectangleLines(
-            @intFromFloat(self.mX),
-            @intFromFloat(self.mY),
+            @intFromFloat(self.base.mX),
+            @intFromFloat(self.base.mY),
             tw * scale,
             th * scale,
             c.RED,
         );
     }
 
+    pub fn markDead(ptr: *anyopaque) void {
+        const self: *Self = @alignCast(@ptrCast(ptr));
+        self.base.markDead();
+    }
+
+    pub fn isDead(ptr: *anyopaque) bool {
+        const self: *Self = @alignCast(@ptrCast(ptr));
+        return self.base.isDead();
+    }
+
     pub fn getPos(ptr: *anyopaque) c.Vector2 {
-        const self: *CanonBullet = @alignCast(@ptrCast(ptr));
-        return c.Vector2{ .x = self.mX, .y = self.mY };
+        const self: *Self = @alignCast(@ptrCast(ptr));
+        return self.base.getPos();
     }
 
     pub fn getBounds(ptr: *anyopaque) c.Rectangle {
-        const self: *CanonBullet = @alignCast(@ptrCast(ptr));
+        const self: *Self = @alignCast(@ptrCast(ptr));
 
         const selectedTexture = res.Resources.LaserSm;
         const tw: f32 = @floatFromInt(selectedTexture.width);
@@ -117,24 +240,14 @@ pub const CanonBullet = struct {
         const scale = 2.0;
 
         return c.Rectangle{
-            .x = self.mX,
-            .y = self.mY,
+            .x = self.base.mX,
+            .y = self.base.mY,
             .width = tw * scale,
             .height = th * scale,
         };
     }
 
-    pub fn markDead(ptr: *anyopaque) void {
-        const self: *CanonBullet = @alignCast(@ptrCast(ptr));
-        self.mDead = true;
-    }
-
-    pub fn isDead(ptr: *anyopaque) bool {
-        const self: *CanonBullet = @alignCast(@ptrCast(ptr));
-        return self.mDead;
-    }
-
-    pub fn asProjectile(self: *CanonBullet) Proj {
+    pub fn asProjectile(self: *Self) Proj {
         return Proj{
             .ptr = self,
 

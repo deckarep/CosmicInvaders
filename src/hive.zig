@@ -2,7 +2,8 @@ const std = @import("std");
 const state = @import("gamestate.zig");
 const conf = @import("conf.zig");
 const res = @import("resources.zig");
-const prj = @import("projectile.zig");
+//const prj = @import("projectile.zig");
+const pj = @import("proj.zig");
 const drw = @import("draw.zig");
 const esngs = @import("easings.zig");
 const c = @import("cdefs.zig").c;
@@ -30,7 +31,7 @@ pub const InvaderSwaps = struct {
 };
 
 pub const Hive = struct {
-    allocator: std.mem.Allocator,
+    mAllocator: std.mem.Allocator,
     mInvaders: std.ArrayList(Invader) = undefined,
     mState: HiveState = .Scanning,
     mRows: usize = 1,
@@ -49,13 +50,13 @@ pub const Hive = struct {
 
     pub fn create(allocator: std.mem.Allocator) Self {
         return Self{
-            .allocator = allocator,
+            .mAllocator = allocator,
         };
     }
 
     pub fn init(self: *Self) !void {
         // Create the invaders.
-        self.mInvaders = std.ArrayList(Invader).init(self.allocator);
+        self.mInvaders = std.ArrayList(Invader).init(self.mAllocator);
     }
 
     // TODO: some kind of functions to initialize the invader count, and rows.
@@ -285,7 +286,9 @@ pub const Hive = struct {
                 const invTotal = self.mInvaders.items.len - 1;
                 const randInvIdx: usize = @intCast(c.GetRandomValue(0, @intCast(invTotal)));
                 const selectedInv = self.mInvaders.items[randInvIdx];
-                try state.mGame.mEnemyProjectiles.append(prj.Projectile.create(selectedInv.mX, selectedInv.mY));
+                const p = try pj.AlienBullet.create(selectedInv.mX, selectedInv.mY, self.mAllocator);
+                const bullet = p.asProjectile();
+                try state.mGame.mEnemyProjectiles.append(bullet);
 
                 self.mState = .Scanning;
             },

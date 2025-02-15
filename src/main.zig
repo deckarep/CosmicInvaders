@@ -200,7 +200,8 @@ fn draw() !void {
         const xOffset: f32 = @floatFromInt(value * w);
         const yOffset: f32 = @floatFromInt(h * 0);
         view = c.Rectangle{ .x = xOffset, .y = yOffset, .width = 5, .height = 5 };
-        drw.drawTextureScaled(prj.mX, prj.mY, res.Resources.AlienBullet, view, 2.0);
+        const prjPos = prj.getPos();
+        drw.drawTextureScaled(prjPos.x, prjPos.y, res.Resources.AlienBullet, view, 2.0);
     }
 
     // Explosions

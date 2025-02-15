@@ -1,6 +1,6 @@
 const std = @import("std");
 const hive = @import("hive.zig");
-const proj = @import("projectile.zig");
+//const proj = @import("projectile.zig");
 const pj = @import("proj.zig");
 const exp = @import("explosion.zig");
 const cld = @import("cloud.zig");
@@ -23,7 +23,7 @@ pub const GameState = struct {
     mHiveCooldown: usize = conf.HiveRespawnCooldown,
     mClouds: std.ArrayList(cld.Cloud) = undefined,
     mFloatingScores: std.ArrayList(fls.FloatingScore) = undefined,
-    mEnemyProjectiles: std.ArrayList(proj.Projectile) = undefined,
+    mEnemyProjectiles: std.ArrayList(pj.Proj) = undefined,
     mPlayerProjectiles: std.ArrayList(pj.Proj) = undefined,
     mInplaceExplosions: std.ArrayList(exp.Explosion) = undefined,
     mWeaponStations: std.ArrayList(wp.WeaponStation) = undefined,
@@ -36,7 +36,7 @@ pub const GameState = struct {
             .mWaveBanner = bnnr.WaveBanner.create(0),
             .mHive = hive.Hive.create(allocator),
             .mClouds = std.ArrayList(cld.Cloud).init(allocator),
-            .mEnemyProjectiles = std.ArrayList(proj.Projectile).init(allocator),
+            .mEnemyProjectiles = std.ArrayList(pj.Proj).init(allocator),
             .mPlayerProjectiles = std.ArrayList(pj.Proj).init(allocator),
             .mInplaceExplosions = std.ArrayList(exp.Explosion).init(allocator),
             .mFloatingScores = std.ArrayList(fls.FloatingScore).init(allocator),
@@ -47,13 +47,17 @@ pub const GameState = struct {
     pub fn deinit(self: *Self) void {
         self.mHive.deinit();
         self.mClouds.deinit();
-        self.mEnemyProjectiles.deinit();
 
-        // Heap allocated.
+        // NOTE: Both player and enemy projectiles are heap allocated.
         for (self.mPlayerProjectiles.items) |p| {
             p.deinit();
         }
         self.mPlayerProjectiles.deinit();
+
+        for (self.mEnemyProjectiles.items) |p| {
+            p.deinit();
+        }
+        self.mEnemyProjectiles.deinit();
 
         self.mInplaceExplosions.deinit();
         self.mFloatingScores.deinit();
@@ -106,14 +110,16 @@ pub const GameState = struct {
         var len = self.mEnemyProjectiles.items.len;
         while (len > 0) : (len -= 1) {
             var currProj = &self.mEnemyProjectiles.items[len - 1];
+            const currProjPos = currProj.getPos();
             // 1. Update projectile.
-            currProj.update();
+            try currProj.update();
 
             // 2. Check on collision w/ weapon station.
             for (self.mWeaponStations.items) |*ws| {
                 const projBounds = currProj.getBounds();
-                if (ws.checkHit(projBounds, 20)) {
-                    try self.createPoofExplosion(currProj.mX, currProj.mY);
+                if (ws.checkHit(projBounds, 10)) {
+                    try self.createPoofExplosion(currProjPos.x, currProjPos.y);
+                    currProj.deinit();
                     _ = self.mEnemyProjectiles.swapRemove(len - 1);
                     std.debug.print("enemy proj hit a station\n", .{});
                     break;
@@ -121,8 +127,9 @@ pub const GameState = struct {
             }
 
             // 3. Check on collision w/ land.
-            if (currProj.mY >= conf.LAND_HEIGHT) {
-                try self.createPoofExplosion(currProj.mX, currProj.mY);
+            if (currProjPos.y >= conf.LAND_HEIGHT) {
+                try self.createPoofExplosion(currProjPos.x, currProjPos.y);
+                currProj.deinit();
                 _ = self.mEnemyProjectiles.swapRemove(len - 1);
                 std.debug.print("enemy proj hit ground\n", .{});
             }
@@ -143,17 +150,17 @@ pub const GameState = struct {
             // projectiles blatantly out of range.
             if (c.CheckCollisionRecs(projBounds, hb)) {
                 // 2.b Find out which invader was hit.
-                var anyDead = false;
+                var anyInvadersDead = false;
                 for (self.mHive.mInvaders.items) |*inv| {
                     if (inv.checkHit(projBounds)) {
                         c.PlaySound(res.Resources.Sfx.LaserHit);
                         currProj.markDead();
                     }
                     if (inv.dead()) {
-                        anyDead = true;
+                        anyInvadersDead = true;
                     }
                 }
-                if (anyDead) {
+                if (anyInvadersDead) {
                     // 2.c Mark this projectile as dead and cull dead invaders.
                     try self.mHive.cullInvaders();
                 }
