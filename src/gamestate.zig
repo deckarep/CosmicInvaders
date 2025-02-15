@@ -1,6 +1,5 @@
 const std = @import("std");
 const hive = @import("hive.zig");
-//const proj = @import("projectile.zig");
 const pj = @import("proj.zig");
 const exp = @import("explosion.zig");
 const cld = @import("cloud.zig");

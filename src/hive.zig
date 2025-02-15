@@ -2,7 +2,6 @@ const std = @import("std");
 const state = @import("gamestate.zig");
 const conf = @import("conf.zig");
 const res = @import("resources.zig");
-//const prj = @import("projectile.zig");
 const pj = @import("proj.zig");
 const drw = @import("draw.zig");
 const esngs = @import("easings.zig");
