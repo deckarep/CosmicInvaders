@@ -93,8 +93,8 @@ pub const WeaponStation = struct {
 
         switch (self.mKind) {
             .Canon => {
-                rect.x += 5;
-                rect.width -= 10;
+                rect.x += 10;
+                rect.width -= 20;
                 rect.y += 20;
                 rect.height -= 20;
             },
