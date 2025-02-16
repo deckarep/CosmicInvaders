@@ -1,6 +1,6 @@
 const std = @import("std");
 const hive = @import("hive.zig");
-const pj = @import("proj.zig");
+const pj = @import("projectile.zig");
 const exp = @import("explosion.zig");
 const cld = @import("cloud.zig");
 const conf = @import("conf.zig");
@@ -8,6 +8,7 @@ const res = @import("resources.zig");
 const fls = @import("floating_scores.zig");
 const bnnr = @import("wave_banner.zig");
 const wp = @import("weapon_station.zig");
+const drw = @import("draw.zig");
 const c = @import("cdefs.zig").c;
 
 pub var mGame: GameState = undefined;
@@ -213,6 +214,18 @@ pub const GameState = struct {
     }
 
     pub fn draw(self: Self) !void {
+        // Draw background.
+        var view = c.Rectangle{ .x = 0, .y = 0, .width = 320, .height = 240 };
+        drw.drawTextureScaled(0, 0, res.Resources.Background, view, 2.0);
+
+        // Draw clouds.
+        for (self.mClouds.items) |*cloud| {
+            cloud.draw();
+        }
+
+        // lightening strike
+        //drawLighteningStrike(10, 10, 300, 400);
+
         // Weapon Stations
         for (self.mWeaponStations.items) |*station| {
             try station.draw();
@@ -223,10 +236,39 @@ pub const GameState = struct {
             inv.draw();
         }
 
+        // Enemy projectiles
+        for (self.mEnemyProjectiles.items) |prj| {
+            const w = 5;
+            const h = 5;
+            const frameSeqCount = 7;
+            const halfFrameSeqCount = frameSeqCount / 2;
+            const speedReduceFactor = 6;
+            const phase = (((self.mTicks) / speedReduceFactor)) % frameSeqCount;
+            const value = if (phase > halfFrameSeqCount) frameSeqCount - phase else phase;
+            const xOffset: f32 = @floatFromInt(value * w);
+            const yOffset: f32 = @floatFromInt(h * 0);
+            view = c.Rectangle{ .x = xOffset, .y = yOffset, .width = 5, .height = 5 };
+            const prjPos = prj.getPos();
+            drw.drawTextureScaled(prjPos.x, prjPos.y, res.Resources.AlienBullet, view, 2.0);
+        }
+
         // Player projectiles
         for (self.mPlayerProjectiles.items) |p| {
             try p.draw();
         }
+
+        // Explosions
+        for (self.mInplaceExplosions.items) |*expl| {
+            expl.draw();
+        }
+
+        // Floating scores.
+        for (self.mFloatingScores.items) |fs| {
+            fs.draw();
+        }
+
+        // Wave Banner
+        try self.mWaveBanner.draw();
 
         const hb = self.mHive.getBounds();
         if (hb.x >= 0 and hb.y >= 0 and hb.width >= 0 and hb.height >= 0) {

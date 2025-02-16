@@ -1,6 +1,6 @@
 const c = @import("cdefs.zig").c;
 const drw = @import("draw.zig");
-const state = @import("gamestate.zig");
+const state = @import("game_state.zig");
 
 pub const Explosion = struct {
     mX: f32,

@@ -1,5 +1,5 @@
 const std = @import("std");
-const state = @import("gamestate.zig");
+const state = @import("game_state.zig");
 const c = @import("cdefs.zig").c;
 const drw = @import("draw.zig");
 const res = @import("resources.zig");

@@ -2,7 +2,7 @@ const std = @import("std");
 const c = @import("cdefs.zig").c;
 const drw = @import("draw.zig");
 const conf = @import("conf.zig");
-const state = @import("gamestate.zig");
+const state = @import("game_state.zig");
 
 const CloudMinY = 80;
 const CloudMaxY = 120;

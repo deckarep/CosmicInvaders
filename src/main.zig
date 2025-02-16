@@ -1,5 +1,5 @@
 const std = @import("std");
-const state = @import("gamestate.zig");
+const state = @import("game_state.zig");
 const conf = @import("conf.zig");
 const zigimg = @import("zigimg");
 const hive = @import("hive.zig");
@@ -70,9 +70,6 @@ fn color24Eq(a: zigimg.color.Rgb24, b: zigimg.color.Rgb24) bool {
     return a.r == b.r and a.g == b.g and a.b == b.b;
 }
 
-var background: c.Texture = undefined;
-var turret2: c.Texture = undefined;
-
 pub fn main() !void {
     // Prints to stderr (it's a shortcut based on `std.io.getStdErr()`)
     std.debug.print("All your {s} are belong to us.\n", .{"codebase"});
@@ -92,8 +89,8 @@ pub fn main() !void {
     c.SetTargetFPS(60);
     defer c.CloseWindow();
 
-    try loadAssets();
-    defer unloadAssets();
+    res.Resources.Load();
+    defer res.Resources.Unload();
 
     state.mGame = state.GameState.create(alloc);
     try state.mGame.init();
@@ -103,67 +100,6 @@ pub fn main() !void {
         try update();
         try draw();
     }
-}
-
-fn loadAssets() !void {
-    // TODO: move these into the resources.zig file.
-    background = c.LoadTexture("data/bg.mz.png");
-    turret2 = c.LoadTexture("data/turret2.mz.png");
-
-    // Textures
-    res.Resources.Clouds[0] = c.LoadTexture("data/cloud1.mz.png");
-    res.Resources.Clouds[1] = c.LoadTexture("data/cloud2.mz.png");
-    res.Resources.Clouds[2] = c.LoadTexture("data/cloud3.mz.png");
-    res.Resources.Clouds[3] = c.LoadTexture("data/cloud4.mz.png");
-    res.Resources.Clouds[4] = c.LoadTexture("data/cloud5.mz.png");
-
-    res.Resources.Invader1 = c.LoadTexture("data/invader1.sz.png");
-
-    res.Resources.Canon = c.LoadTexture("data/turret1.sz.png");
-    res.Resources.LaserSm = c.LoadTexture("data/laser_small.mz.png");
-    res.Resources.LaserMed = c.LoadTexture("data/laser_medium.mz.png");
-    res.Resources.AlienBullet = c.LoadTexture("data/alienbullet.sz.png");
-
-    // Effects
-    res.Resources.Effects.Poof = c.LoadTexture("data/poof.sz.png");
-    res.Resources.Effects.Puff1 = c.LoadTexture("data/puff1.sz.png");
-    res.Resources.Effects.Puff2 = c.LoadTexture("data/puff2.sz.png");
-
-    // Fonts
-    res.Resources.Fonts.Font1 = c.LoadFont("data/font_big_red_xna.png");
-
-    // Sfx
-    res.Resources.Sfx.LaserFire = c.LoadSound("data/zoop.wav");
-    res.Resources.Sfx.LaserHit = c.LoadSound("data/laserhit.wav");
-}
-
-fn unloadAssets() void {
-    // TODO: this needs moving.
-    c.UnloadTexture(background);
-    c.UnloadTexture(turret2);
-
-    // Texture
-    for (res.Resources.Clouds) |cloud| {
-        c.UnloadTexture(cloud);
-    }
-
-    c.UnloadTexture(res.Resources.Invader1);
-    c.UnloadTexture(res.Resources.Canon);
-    c.UnloadTexture(res.Resources.LaserSm);
-    c.UnloadTexture(res.Resources.LaserMed);
-    c.UnloadTexture(res.Resources.AlienBullet);
-
-    // Effects
-    c.UnloadTexture(res.Resources.Effects.Poof);
-    c.UnloadTexture(res.Resources.Effects.Puff1);
-    c.UnloadTexture(res.Resources.Effects.Puff2);
-
-    // Font
-    c.UnloadFont(res.Resources.Fonts.Font1);
-
-    // Sfx
-    c.UnloadSound(res.Resources.Sfx.LaserFire);
-    c.UnloadSound(res.Resources.Sfx.LaserHit);
 }
 
 fn update() !void {
@@ -176,51 +112,9 @@ fn draw() !void {
 
     c.ClearBackground(c.WHITE);
 
-    // Draw background.
-    var view = c.Rectangle{ .x = 0, .y = 0, .width = 320, .height = 240 };
-    drawTextureScaled(0, 0, background, view, 2.0);
-
-    // Draw clouds.
-    for (state.mGame.mClouds.items) |*cloud| {
-        cloud.draw();
-    }
-
-    // TODO: move all drawing code above into gamestate.draw like below.
     try state.mGame.draw();
 
-    // Enemy projectiles
-    for (state.mGame.mEnemyProjectiles.items) |prj| {
-        const w = 5;
-        const h = 5;
-        const frameSeqCount = 7;
-        const halfFrameSeqCount = frameSeqCount / 2;
-        const speedReduceFactor = 6;
-        const phase = (((state.mGame.mTicks) / speedReduceFactor)) % frameSeqCount;
-        const value = if (phase > halfFrameSeqCount) frameSeqCount - phase else phase;
-        const xOffset: f32 = @floatFromInt(value * w);
-        const yOffset: f32 = @floatFromInt(h * 0);
-        view = c.Rectangle{ .x = xOffset, .y = yOffset, .width = 5, .height = 5 };
-        const prjPos = prj.getPos();
-        drw.drawTextureScaled(prjPos.x, prjPos.y, res.Resources.AlienBullet, view, 2.0);
-    }
-
-    // Explosions
-    for (state.mGame.mInplaceExplosions.items) |*expl| {
-        expl.draw();
-    }
-
-    // Floating scores.
-    for (state.mGame.mFloatingScores.items) |fs| {
-        fs.draw();
-    }
-
-    // lightening strike
-    drawLighteningStrike(10, 10, 300, 400);
-
-    //c.DrawTextEx(font, "WAVE 1", .{ .x = 20, .y = 20 }, 15, 2, conf.FontColor.Red);
-
-    // Wave Banner
-    try state.mGame.mWaveBanner.draw();
+    c.DrawRectangle(0, conf.LAND_HEIGHT, conf.WIN_WIDTH, 2, c.YELLOW);
 
     c.DrawRectangle(8, conf.WIN_HEIGHT - 20, 80, 40, c.BLACK);
     c.DrawFPS(10, conf.WIN_HEIGHT - 20);
@@ -273,30 +167,6 @@ fn drawLighteningStrike(fromX: i32, fromY: i32, toX: i32, toY: i32) void {
     c.DrawRectangle(toX - pixelSize, toY, pixelSize, pixelSize, c.BLUE);
     c.DrawRectangle(toX, toY, pixelSize, pixelSize, primaryColor);
     c.DrawRectangle(toX + toY, currentY, pixelSize, pixelSize, c.BLUE);
-}
-
-fn drawTextureScaled(x: i32, y: i32, texture: c.Texture, view: c.Rectangle, scale: f32) void {
-    const src = c.Rectangle{
-        .x = view.x,
-        .y = view.y,
-        .width = view.width,
-        .height = view.height,
-    };
-    const dst = c.Rectangle{
-        .x = @floatFromInt(x),
-        .y = @floatFromInt(y),
-        .width = view.width * scale,
-        .height = view.height * scale,
-    };
-
-    c.DrawTexturePro(
-        texture,
-        src,
-        dst,
-        c.Vector2{ .x = 0, .y = 0 },
-        0,
-        c.WHITE,
-    );
 }
 
 fn regenAllBitmaps() !void {

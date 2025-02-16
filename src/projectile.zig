@@ -3,7 +3,7 @@ const c = @import("cdefs.zig").c;
 const conf = @import("conf.zig");
 const res = @import("resources.zig");
 const drw = @import("draw.zig");
-const state = @import("gamestate.zig");
+const state = @import("game_state.zig");
 
 pub const Proj = struct {
     ptr: *anyopaque,

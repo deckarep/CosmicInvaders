@@ -3,7 +3,7 @@ const c = @import("cdefs.zig").c;
 const conf = @import("conf.zig");
 const fnts = @import("resources.zig").Resources.Fonts;
 const esngs = @import("easings.zig");
-const state = @import("gamestate.zig");
+const state = @import("game_state.zig");
 
 const duration = 30;
 

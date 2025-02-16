@@ -1,8 +1,8 @@
 const std = @import("std");
-const state = @import("gamestate.zig");
+const state = @import("game_state.zig");
 const conf = @import("conf.zig");
 const res = @import("resources.zig");
-const pj = @import("proj.zig");
+const pj = @import("projectile.zig");
 const drw = @import("draw.zig");
 const esngs = @import("easings.zig");
 const c = @import("cdefs.zig").c;
@@ -63,7 +63,7 @@ pub const Hive = struct {
         self.mState = .Scanning;
 
         const xOffset = 40;
-        const yOffset = 100;
+        const yOffset = 350;
 
         const invXPadding = 4;
         const invYPadding = 4;
@@ -112,6 +112,7 @@ pub const Hive = struct {
     }
 
     pub fn cullInvaders(self: *Self) !void {
+        var howMany: usize = 0;
         var len = self.mInvaders.items.len;
         while (len != 0) : (len -= 1) {
             const currInv = self.mInvaders.items[len - 1];
@@ -120,13 +121,25 @@ pub const Hive = struct {
                 try state.mGame.createPoofExplosion(currInv.mX, currInv.mY);
 
                 switch (currInv.mDeathReason.?) {
-                    .HitGround => try state.mGame.createMiniRedFloatingScore("-1", currInv.mX, currInv.mY),
-                    .PlayerProjectile => try state.mGame.createSmallWhiteFloatingScore("+20", currInv.mX, currInv.mY),
+                    .HitGround => {
+                        std.debug.print("culling invader due to hitting ground\n", .{});
+                        try state.mGame.createMiniRedFloatingScore("-1", currInv.mX, currInv.mY);
+                    },
+                    .HitWeaponStation => {
+                        std.debug.print("culling invader due to hitting a weapon station\n", .{});
+                        try state.mGame.createMiniRedFloatingScore("-5", currInv.mX, currInv.mY);
+                    },
+                    .PlayerProjectile => {
+                        try state.mGame.createSmallWhiteFloatingScore("+20", currInv.mX, currInv.mY);
+                    },
                 }
 
                 _ = self.mInvaders.swapRemove(len - 1);
+                howMany += 1;
             }
         }
+
+        std.debug.print("culled {d} invaders\n", .{howMany});
     }
 
     fn pumpFrames(self: *Self, dur: usize, targetState: HiveState) bool {
@@ -176,12 +189,39 @@ pub const Hive = struct {
         };
     }
 
+    pub fn checkInvaderCollided(self: *Self, invader: *Invader) bool {
+        _ = self;
+
+        // NOTE: kinda weird that this function is grabbing a reference to mWeaponStations directly.
+        const invBounds = invader.getBounds();
+
+        // 1. Check if weapon station was hit.
+        for (state.mGame.mWeaponStations.items) |*ws| {
+            // When the weapon station was hit, it takes damage.
+            if (ws.checkHit(invBounds, 10)) {
+                // And the invader dies.
+                invader.mDeathReason = .HitWeaponStation;
+                return true;
+            }
+        }
+
+        // 2. Check if land was hit.
+        if (invBounds.y + invBounds.height >= conf.LAND_HEIGHT) {
+            invader.mDeathReason = .HitGround;
+            return true;
+        }
+
+        return false;
+    }
+
     pub fn update(self: *Self) !void {
         //if (state.mGame.mTicks % 2 != 0) return;
         if (self.mInvaders.items.len == 0) {
             // TODO: Hive must have been wiped out, spawn a new wave.
             return;
         }
+
+        var purgeOneOrMoreDead = false;
 
         switch (self.mState) {
             .Scanning => {
@@ -197,6 +237,11 @@ pub const Hive = struct {
                 } else {
                     for (self.mInvaders.items) |*inv| {
                         inv.mX += self.mHorizontalSpeed * self.mDirection;
+
+                        // Check on any collisions for this invader.
+                        if (self.checkInvaderCollided(inv)) {
+                            purgeOneOrMoreDead = true;
+                        }
                     }
                 }
 
@@ -218,20 +263,13 @@ pub const Hive = struct {
                 }
             },
             .Descending => {
-                var purgeOneOrMoreDead = false;
                 for (self.mInvaders.items) |*inv| {
                     inv.mY += self.mDescendingSpeed;
 
-                    if (inv.mY >= conf.LAND_HEIGHT) {
-                        inv.mDeathReason = .HitGround;
+                    // Check on any collisions for this invader.
+                    if (self.checkInvaderCollided(inv)) {
                         purgeOneOrMoreDead = true;
                     }
-                }
-
-                // During the descent, one or more invaders died and need to be
-                // purged from the hive. The hive does not tolerate death!
-                if (purgeOneOrMoreDead) {
-                    try self.cullInvaders();
                 }
 
                 self.mDescendCountdown -= 1;
@@ -292,11 +330,18 @@ pub const Hive = struct {
                 self.mState = .Scanning;
             },
         }
+
+        // If one or more invaders died and need to be
+        // purged from the hive. The hive does not tolerate insolance, purge the invader.
+        if (purgeOneOrMoreDead) {
+            try self.cullInvaders();
+        }
     }
 };
 
 pub const InvaderDeathReason = enum(u8) {
     HitGround,
+    HitWeaponStation,
     PlayerProjectile,
 };
 
@@ -376,7 +421,28 @@ pub const Invader = struct {
             scale,
         );
 
-        //c.DrawRectangleLines(@intFromFloat(inv.mX), @intFromFloat(inv.mY), width * scale, height * scale, c.RED);
+        // Debug inv bounds.
+        const invBounds = self.getBounds();
+        c.DrawRectangleLines(
+            @intFromFloat(invBounds.x),
+            @intFromFloat(invBounds.y),
+            @intFromFloat(invBounds.width),
+            @intFromFloat(invBounds.height),
+            c.RED,
+        );
+    }
+
+    pub inline fn getPos(self: Self) c.Vector2 {
+        return c.Vector2{ .x = self.mX, .y = self.mY };
+    }
+
+    pub inline fn getBounds(self: Self) c.Rectangle {
+        return c.Rectangle{
+            .x = self.mX,
+            .y = self.mY,
+            .width = invWidth,
+            .height = invHeight,
+        };
     }
 
     pub inline fn dead(self: Self) bool {
@@ -384,12 +450,7 @@ pub const Invader = struct {
     }
 
     pub fn checkHit(self: *Self, projBounds: c.Rectangle) bool {
-        const invBounds = c.Rectangle{
-            .x = self.mX,
-            .y = self.mY,
-            .width = invWidth,
-            .height = invHeight,
-        };
+        const invBounds = self.getBounds();
 
         const collided = c.CheckCollisionRecs(projBounds, invBounds);
         if (collided) {
