@@ -89,7 +89,7 @@ pub fn main() !void {
     c.SetTargetFPS(60);
     defer c.CloseWindow();
 
-    res.Resources.Load();
+    try res.Resources.Load();
     defer res.Resources.Unload();
 
     state.mGame = state.GameState.create(alloc);

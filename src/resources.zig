@@ -1,4 +1,7 @@
+const std = @import("std");
 const c = @import("cdefs.zig").c;
+
+const ROOT_PATH = "data/";
 
 // TODO: Call this Assets, since now it's holding Fonts and probably other Raylib junk.
 pub const Resources = struct {
@@ -35,41 +38,46 @@ pub const Resources = struct {
         // like this! https://www.youtube.com/watch?v=oxxBXpnn2Jw
     };
 
-    pub fn Load() void {
-        Resources.Background = c.LoadTexture("data/bg.mz.png");
-        Resources.Turret2 = c.LoadTexture("data/turret2.mz.png");
+    pub fn Load() !void {
 
         // Textures
-        Resources.Clouds[0] = c.LoadTexture("data/cloud1.mz.png");
-        Resources.Clouds[1] = c.LoadTexture("data/cloud2.mz.png");
-        Resources.Clouds[2] = c.LoadTexture("data/cloud3.mz.png");
-        Resources.Clouds[3] = c.LoadTexture("data/cloud4.mz.png");
-        Resources.Clouds[4] = c.LoadTexture("data/cloud5.mz.png");
+        Resources.Background = c.LoadTexture(ROOT_PATH ++ "bg.mz.png");
 
-        Resources.Invader1 = c.LoadTexture("data/invader1.sz.png");
+        for (0..5) |i| {
+            var buf: [32]u8 = undefined;
+            const path = try std.fmt.bufPrintZ(
+                buf[0..],
+                "{s}cloud{d}.mz.png",
+                .{ ROOT_PATH, i },
+            );
+            Resources.Clouds[i] = c.LoadTexture(path.ptr);
+        }
 
-        Resources.Canon = c.LoadTexture("data/turret1.sz.png");
-        Resources.LaserSm = c.LoadTexture("data/laser_small.mz.png");
-        Resources.LaserMed = c.LoadTexture("data/laser_medium.mz.png");
-        Resources.AlienBullet = c.LoadTexture("data/alienbullet.sz.png");
+        Resources.Invader1 = c.LoadTexture(ROOT_PATH ++ "invader1.sz.png");
+        Resources.AlienBullet = c.LoadTexture(ROOT_PATH ++ "alienbullet.sz.png");
+        Resources.Turret2 = c.LoadTexture(ROOT_PATH ++ "turret2.mz.png");
+
+        Resources.Canon = c.LoadTexture(ROOT_PATH ++ "turret1.sz.png");
+        Resources.LaserSm = c.LoadTexture(ROOT_PATH ++ "laser_small.mz.png");
+        Resources.LaserMed = c.LoadTexture(ROOT_PATH ++ "laser_medium.mz.png");
 
         // Effects
-        Resources.Effects.Poof = c.LoadTexture("data/poof.sz.png");
-        Resources.Effects.Puff1 = c.LoadTexture("data/puff1.sz.png");
-        Resources.Effects.Puff2 = c.LoadTexture("data/puff2.sz.png");
+        Resources.Effects.Poof = c.LoadTexture(ROOT_PATH ++ "poof.sz.png");
+        Resources.Effects.Puff1 = c.LoadTexture(ROOT_PATH ++ "puff1.sz.png");
+        Resources.Effects.Puff2 = c.LoadTexture(ROOT_PATH ++ "puff2.sz.png");
 
         // Fonts
-        Resources.Fonts.Font1 = c.LoadFont("data/font_big_red_xna.png");
+        Resources.Fonts.Font1 = c.LoadFont(ROOT_PATH ++ "font_big_red_xna.png");
 
         // Sfx
-        Resources.Sfx.LaserFire = c.LoadSound("data/zoop.wav");
-        Resources.Sfx.LaserHit = c.LoadSound("data/laserhit.wav");
+        Resources.Sfx.LaserFire = c.LoadSound(ROOT_PATH ++ "zoop.wav");
+        Resources.Sfx.LaserHit = c.LoadSound(ROOT_PATH ++ "laserhit.wav");
     }
 
     pub fn Unload() void {
         // Texture
-        for (Resources.Clouds) |cloud| {
-            c.UnloadTexture(cloud);
+        for (&Resources.Clouds) |*cloud| {
+            c.UnloadTexture(cloud.*);
         }
 
         c.UnloadTexture(Resources.Turret2);
