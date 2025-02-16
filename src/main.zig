@@ -103,6 +103,9 @@ pub fn main() !void {
 }
 
 fn update() !void {
+    if (c.IsMouseButtonReleased(c.MOUSE_BUTTON_RIGHT)) {
+        try state.mGame.debugCreateRandomWeaponStation();
+    }
     try state.mGame.update();
 }
 

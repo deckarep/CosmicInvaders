@@ -63,7 +63,7 @@ pub const Hive = struct {
         self.mState = .Scanning;
 
         const xOffset = 40;
-        const yOffset = 350;
+        const yOffset = 0; //350;
 
         const invXPadding = 4;
         const invYPadding = 4;

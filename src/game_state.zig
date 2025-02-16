@@ -78,6 +78,37 @@ pub const GameState = struct {
         try self.mWeaponStations.append(wp.WeaponStation.create(wp.WeaponStationKind.Canon));
     }
 
+    pub fn debugCreateRandomWeaponStation(self: *Self) !void {
+        const maxAttempts = 25;
+        var attempts: usize = 0;
+
+        var tmp: wp.WeaponStation = undefined;
+        while (true) {
+            var haveCollision = false;
+            tmp = wp.WeaponStation.create(wp.WeaponStationKind.Canon);
+            tmp.mX = @floatFromInt(c.GetRandomValue(0, conf.WIN_WIDTH));
+            tmp.mY = 372;
+            const tmpBounds = tmp.getBounds();
+
+            for (self.mWeaponStations.items) |*ws| {
+                const wsBounds = ws.getBounds();
+                if (c.CheckCollisionRecs(tmpBounds, wsBounds)) {
+                    haveCollision = true;
+                }
+            }
+
+            attempts += 1;
+            if (attempts >= maxAttempts) {
+                std.debug.print("No room to place a weapon station!\n", .{});
+                return;
+            }
+
+            if (!haveCollision) break;
+        }
+
+        try self.mWeaponStations.append(tmp);
+    }
+
     pub fn update(self: *Self) !void {
         // Clouds
         for (self.mClouds.items) |*cloud| {
