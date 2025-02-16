@@ -5,6 +5,10 @@ const ROOT_PATH = "data/";
 
 // TODO: Call this Assets, since now it's holding Fonts and probably other Raylib junk.
 pub const Resources = struct {
+    var texturesLoaded: usize = 0;
+    var fontsLoaded: usize = 0;
+    var soundsLoaded: usize = 0;
+
     pub var Background: c.Texture = undefined;
     pub var Clouds: [5]c.Texture = undefined;
     pub var AlienBullet: c.Texture = undefined;
@@ -41,7 +45,7 @@ pub const Resources = struct {
     pub fn Load() !void {
 
         // Textures
-        Resources.Background = c.LoadTexture(ROOT_PATH ++ "bg.mz.png");
+        Resources.Background = loadTexture(ROOT_PATH ++ "bg.mz.png");
 
         for (0..5) |i| {
             var buf: [32]u8 = undefined;
@@ -50,54 +54,92 @@ pub const Resources = struct {
                 "{s}cloud{d}.mz.png",
                 .{ ROOT_PATH, i },
             );
-            Resources.Clouds[i] = c.LoadTexture(path.ptr);
+            Resources.Clouds[i] = loadTexture(path);
         }
 
-        Resources.Invader1 = c.LoadTexture(ROOT_PATH ++ "invader1.sz.png");
-        Resources.AlienBullet = c.LoadTexture(ROOT_PATH ++ "alienbullet.sz.png");
-        Resources.Turret2 = c.LoadTexture(ROOT_PATH ++ "turret2.mz.png");
+        Resources.Invader1 = loadTexture(ROOT_PATH ++ "invader1.sz.png");
+        Resources.AlienBullet = loadTexture(ROOT_PATH ++ "alienbullet.sz.png");
+        Resources.Turret2 = loadTexture(ROOT_PATH ++ "turret2.mz.png");
 
-        Resources.Canon = c.LoadTexture(ROOT_PATH ++ "turret1.sz.png");
-        Resources.LaserSm = c.LoadTexture(ROOT_PATH ++ "laser_small.mz.png");
-        Resources.LaserMed = c.LoadTexture(ROOT_PATH ++ "laser_medium.mz.png");
+        Resources.Canon = loadTexture(ROOT_PATH ++ "turret1.sz.png");
+        Resources.LaserSm = loadTexture(ROOT_PATH ++ "laser_small.mz.png");
+        Resources.LaserMed = loadTexture(ROOT_PATH ++ "laser_medium.mz.png");
 
         // Effects
-        Resources.Effects.Poof = c.LoadTexture(ROOT_PATH ++ "poof.sz.png");
-        Resources.Effects.Puff1 = c.LoadTexture(ROOT_PATH ++ "puff1.sz.png");
-        Resources.Effects.Puff2 = c.LoadTexture(ROOT_PATH ++ "puff2.sz.png");
+        Resources.Effects.Poof = loadTexture(ROOT_PATH ++ "poof.sz.png");
+        Resources.Effects.Puff1 = loadTexture(ROOT_PATH ++ "puff1.sz.png");
+        Resources.Effects.Puff2 = loadTexture(ROOT_PATH ++ "puff2.sz.png");
 
         // Fonts
-        Resources.Fonts.Font1 = c.LoadFont(ROOT_PATH ++ "font_big_red_xna.png");
+        Resources.Fonts.Font1 = loadFont(ROOT_PATH ++ "font_big_red_xna.png");
 
         // Sfx
-        Resources.Sfx.LaserFire = c.LoadSound(ROOT_PATH ++ "zoop.wav");
-        Resources.Sfx.LaserHit = c.LoadSound(ROOT_PATH ++ "laserhit.wav");
+        Resources.Sfx.LaserFire = loadSound(ROOT_PATH ++ "zoop.wav");
+        Resources.Sfx.LaserHit = loadSound(ROOT_PATH ++ "laserhit.wav");
+    }
+
+    fn loadTexture(path: [:0]const u8) c.Texture {
+        Resources.texturesLoaded += 1;
+        return c.LoadTexture(path.ptr);
+    }
+
+    fn unloadTexture(texture: c.Texture) void {
+        Resources.texturesLoaded -= 1;
+        c.UnloadTexture(texture);
+    }
+
+    fn loadSound(path: [:0]const u8) c.Sound {
+        Resources.soundsLoaded += 1;
+        return c.LoadSound(path.ptr);
+    }
+
+    fn unloadSound(snd: c.Sound) void {
+        Resources.soundsLoaded -= 1;
+        c.UnloadSound(snd);
+    }
+
+    fn loadFont(path: [:0]const u8) c.Font {
+        Resources.fontsLoaded += 1;
+        return c.LoadFont(path.ptr);
+    }
+
+    fn unloadFont(fnt: c.Font) void {
+        Resources.fontsLoaded -= 1;
+        c.UnloadFont(fnt);
     }
 
     pub fn Unload() void {
-        // Texture
-        for (&Resources.Clouds) |*cloud| {
-            c.UnloadTexture(cloud.*);
+        defer {
+            // Ensure we unloaded everything.
+            // But, currently this doesn't tell us what is missing.
+            std.debug.assert(Resources.texturesLoaded == 0);
+            std.debug.assert(Resources.fontsLoaded == 0);
+            std.debug.assert(Resources.soundsLoaded == 0);
         }
 
-        c.UnloadTexture(Resources.Turret2);
-        c.UnloadTexture(Resources.Background);
-        c.UnloadTexture(Resources.Invader1);
-        c.UnloadTexture(Resources.Canon);
-        c.UnloadTexture(Resources.LaserSm);
-        c.UnloadTexture(Resources.LaserMed);
-        c.UnloadTexture(Resources.AlienBullet);
+        // Texture
+        for (&Resources.Clouds) |*cloud| {
+            unloadTexture(cloud.*);
+        }
+
+        unloadTexture(Resources.Turret2);
+        unloadTexture(Resources.Background);
+        unloadTexture(Resources.Invader1);
+        unloadTexture(Resources.Canon);
+        unloadTexture(Resources.LaserSm);
+        unloadTexture(Resources.LaserMed);
+        unloadTexture(Resources.AlienBullet);
 
         // Effects
-        c.UnloadTexture(Resources.Effects.Poof);
-        c.UnloadTexture(Resources.Effects.Puff1);
-        c.UnloadTexture(Resources.Effects.Puff2);
+        unloadTexture(Resources.Effects.Poof);
+        unloadTexture(Resources.Effects.Puff1);
+        unloadTexture(Resources.Effects.Puff2);
 
         // Font
-        c.UnloadFont(Resources.Fonts.Font1);
+        unloadFont(Resources.Fonts.Font1);
 
         // Sfx
-        c.UnloadSound(Resources.Sfx.LaserFire);
-        c.UnloadSound(Resources.Sfx.LaserHit);
+        unloadSound(Resources.Sfx.LaserFire);
+        unloadSound(Resources.Sfx.LaserHit);
     }
 };
