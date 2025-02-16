@@ -1,8 +1,9 @@
 const c = @import("cdefs.zig").c;
 
+pub const SCALE_FACTOR = 2;
 pub const WIN_WIDTH = 640;
 pub const WIN_HEIGHT = 480;
-pub const LAND_HEIGHT = 420;
+pub const LAND_HEIGHT = 213 * SCALE_FACTOR;
 
 pub const FontColor = struct {
     pub const Red = c.Color{ .r = 245, .g = 59, .b = 103, .a = 255 };

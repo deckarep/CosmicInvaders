@@ -37,18 +37,20 @@ even diverge or change some aspects of the game such as the graphics, enemies, s
 
 - [ ] On start game, player starts with 550 money, 25 health points
 - [ ] Weapons
-      Lazer Canon Turret = 140 - simply fires projectile up
-      Missle Battery = 350 - fires a heat seeking, exploding missle
-      Spark Tower = 550 - emits a catastrophic spark of electricity
-
+    - [ ] Lazer Canon Turret = 140 - simply fires projectile up
+    - [ ] Missle Battery = 350 - fires a heat seeking, exploding missle
+    - [ ] Spark Tower = 550 - emits a catastrophic spark of electricity
 - [ ] On game over, show GAME OVER banner, WAVES DEFEATED: <howmany>
-- [ ] Every level, a new set of invaders is spawn in symmetrical formation.
+- [x] Max of 12 invaders per row
+- [ ] Every level, a new set of invaders is spawn in symmetrical formation
 - [ ] On game over screen, everything is rendered in monochrome greyscale except banner
 - [x] Hit on invader makes it flash white, invader now becomes red
 - [x] Between waves, all player's buildings remain
 - [x] On building hit, show a single dust cloud
 - [x] When building is below X percent, show repeated dust clouds
-- [ ] Buildings cannot overlap, if overlapped render as red and don't allow placing it
+- [ ] Buildings cannot overlap on user placement, if overlapped render as red and don't allow placing it
+- [ ] When an invader is hit, his framerate speeds up temporarily to illustrate injury (faster pulsing)
 - [ ] Each new building costs more than the last
-- [ ] Every 5 levels (confirm this), a boss shows up drops red balls, green bubble with red eye
+- [ ] BOSS FIGHT: Every 5 levels (confirm this), a boss shows up drops red balls, green bubble with red eye
       Invaders will fly in circular motion around it, protecting it
+- [ ] More notable settings and increase factors can be found here: `data/strings.txt`

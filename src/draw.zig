@@ -25,6 +25,8 @@ pub fn drawTextureScaled(x: f32, y: f32, texture: c.Texture, view: c.Rectangle, 
     );
 }
 
+// NOTE: Probably going to delete this...as it's currently unfinished and unused and now
+// unecessary!
 pub fn loadAllegroFont(imgFontPath: [:0]const u8, allocator: std.mem.Allocator) !c.Font {
     var font = std.mem.zeroes(c.Font);
     font.texture = c.LoadTexture(imgFontPath);
