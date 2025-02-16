@@ -127,7 +127,7 @@ pub const Hive = struct {
                     },
                     .HitWeaponStation => {
                         std.debug.print("culling invader due to hitting a weapon station\n", .{});
-                        try state.mGame.createMiniRedFloatingScore("-5", currInv.mX, currInv.mY);
+                        try state.mGame.createMiniRedFloatingScore("-10", currInv.mX, currInv.mY);
                     },
                     .PlayerProjectile => {
                         try state.mGame.createSmallWhiteFloatingScore("+20", currInv.mX, currInv.mY);

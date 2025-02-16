@@ -215,7 +215,7 @@ pub const GameState = struct {
 
     pub fn draw(self: Self) !void {
         // Draw background.
-        var view = c.Rectangle{ .x = 0, .y = 0, .width = 320, .height = 240 };
+        const view = c.Rectangle{ .x = 0, .y = 0, .width = 320, .height = 240 };
         drw.drawTextureScaled(0, 0, res.Resources.Background, view, 2.0);
 
         // Draw clouds.
@@ -238,18 +238,7 @@ pub const GameState = struct {
 
         // Enemy projectiles
         for (self.mEnemyProjectiles.items) |prj| {
-            const w = 5;
-            const h = 5;
-            const frameSeqCount = 7;
-            const halfFrameSeqCount = frameSeqCount / 2;
-            const speedReduceFactor = 6;
-            const phase = (((self.mTicks) / speedReduceFactor)) % frameSeqCount;
-            const value = if (phase > halfFrameSeqCount) frameSeqCount - phase else phase;
-            const xOffset: f32 = @floatFromInt(value * w);
-            const yOffset: f32 = @floatFromInt(h * 0);
-            view = c.Rectangle{ .x = xOffset, .y = yOffset, .width = 5, .height = 5 };
-            const prjPos = prj.getPos();
-            drw.drawTextureScaled(prjPos.x, prjPos.y, res.Resources.AlienBullet, view, 2.0);
+            try prj.draw();
         }
 
         // Player projectiles

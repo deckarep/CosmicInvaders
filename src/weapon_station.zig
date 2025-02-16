@@ -120,7 +120,7 @@ pub const WeaponStation = struct {
     }
 
     pub fn checkHit(self: *Self, projBounds: c.Rectangle, amount: u8) bool {
-        if (self.dead()) return true;
+        if (self.dead()) return false;
 
         if (c.CheckCollisionRecs(projBounds, self.getBounds())) {
             self.mHealth -= amount;
