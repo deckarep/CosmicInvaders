@@ -86,7 +86,7 @@ pub const GameState = struct {
         while (true) {
             var haveCollision = false;
             tmp = wp.WeaponStation.create(wp.WeaponStationKind.Canon);
-            tmp.mX = @floatFromInt(c.GetRandomValue(0, conf.WIN_WIDTH));
+            tmp.mX = @floatFromInt(c.GetRandomValue(0, conf.WIN_WIDTH - 38));
             tmp.mY = 372;
             const tmpBounds = tmp.getBounds();
 
@@ -233,6 +233,11 @@ pub const GameState = struct {
             try currWS.update();
 
             if (currWS.dead()) {
+                // TODO: added this sound just for fun, but we really should be playing
+                // the sound, when the weapon station moves to a dying state, and is
+                // still visibile on-screen but showing it's explosion and sharapnel.
+                // So, this PlaySound should be moved somewhere in that phase!
+                c.PlaySound(res.Resources.Sfx.Explosion);
                 _ = self.mWeaponStations.swapRemove(len - 1);
             }
         }

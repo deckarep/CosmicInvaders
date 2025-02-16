@@ -1,4 +1,5 @@
 const std = @import("std");
+const builtin = @import("builtin");
 const state = @import("game_state.zig");
 const conf = @import("conf.zig");
 const zigimg = @import("zigimg");
@@ -8,8 +9,22 @@ const res = @import("resources.zig");
 const drw = @import("draw.zig");
 const c = @import("cdefs.zig").c;
 
-var gpa = std.heap.GeneralPurposeAllocator(.{}){};
-const alloc = gpa.allocator();
+// NOTE: This magic selects which concrete allocator depending on build mode.
+const GPA = std.heap.GeneralPurposeAllocator(.{ .safety = true });
+var gpa: ?GPA = gpaBreak: {
+    if (builtin.link_libc) {
+        if (switch (builtin.mode) {
+            .ReleaseSafe, .ReleaseFast => true,
+
+            // We also use it if we can detect we're running under
+            // Valgrind since Valgrind only instruments the C allocator
+            else => std.valgrind.runningOnValgrind() > 0,
+        }) break :gpaBreak null;
+    }
+
+    break :gpaBreak GPA{};
+};
+var alloc: std.mem.Allocator = undefined;
 
 // Note: requires Zig 0.14.0-dev or higher so far.
 
@@ -74,12 +89,21 @@ pub fn main() !void {
     // Prints to stderr (it's a shortcut based on `std.io.getStdErr()`)
     std.debug.print("All your {s} are belong to us.\n", .{"codebase"});
 
-    defer {
-        const deinit_status = gpa.deinit();
+    // Set the allocator interface to whatever concrete allocator was selected above.
+    if (gpa) |*value| {
+        std.debug.print("Using the GPA (Debug allocator)...\n", .{});
+        alloc = value.allocator();
+    } else {
+        std.debug.print("Using the c_allocator...\n", .{});
+        alloc = std.heap.c_allocator;
+    }
+
+    defer if (gpa) |*myGPA| {
+        const deinit_status = myGPA.deinit();
         if (deinit_status == .leak) {
             std.debug.print("You lack discipline! Leaks detected!\n", .{});
         }
-    }
+    };
 
     //try regenAllBitmaps();
 
