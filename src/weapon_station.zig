@@ -25,6 +25,7 @@ pub const WeaponStation = struct {
     mY: f32 = 372,
     mHealth: u8 = 100, // express as percent or some other unit?
     mFireCountdown: usize = 0,
+    mFrameIdx: usize = 0,
 
     const Self = @This();
 
@@ -52,6 +53,8 @@ pub const WeaponStation = struct {
                     try state.mGame.spawnCanonBullet(x, self.mY);
                     c.PlaySound(res.Resources.Sfx.LaserFire);
                     self.mFireCountdown = conf.CanonCooldown;
+                    self.mFrameIdx += 1;
+                    return;
                 }
             },
             .TeslaCoil => {
@@ -64,6 +67,14 @@ pub const WeaponStation = struct {
                     self.mFireCountdown = conf.CanonCooldown;
                 }
             },
+        }
+
+        // Currently hardcoded to advance frames for Canon.
+        if (self.mFrameIdx != 0 and (state.mGame.mTicks % 5) == 0) {
+            self.mFrameIdx += 1;
+            if (self.mFrameIdx > 4) {
+                self.mFrameIdx = 0;
+            }
         }
     }
 
@@ -189,7 +200,8 @@ pub const WeaponStation = struct {
                 // const value = if (phase > halfFrameSeqCount) frameSeqCount - phase else phase;
                 // const xOffset: f32 = @floatFromInt(value * w);
                 // const yOffset: f32 = @floatFromInt(h * 0);
-                const view = c.Rectangle{ .x = 0, .y = 0, .width = w, .height = h };
+
+                const view = c.Rectangle{ .x = @as(f32, @floatFromInt(self.mFrameIdx)) * w, .y = 0, .width = w, .height = h };
                 drw.drawTextureScaled(
                     self.mX,
                     self.mY,

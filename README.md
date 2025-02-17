@@ -43,6 +43,8 @@ even diverge or change some aspects of the game such as the graphics, enemies, s
 - [ ] On game over, show GAME OVER banner, WAVES DEFEATED: <howmany>
 - [x] Max of 12 invaders per row
 - [ ] Every level, a new set of invaders is spawn in symmetrical formation
+- [ ] Upon hit of weapon station, screen shake
+- [ ] Upon weapon station blowing up, longer screen shake
 - [ ] On game over screen, everything is rendered in monochrome greyscale except banner
 - [x] Hit on invader makes it flash white, invader now becomes red
 - [x] Between waves, all player's buildings remain

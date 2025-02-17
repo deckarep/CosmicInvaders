@@ -110,7 +110,7 @@ pub fn main() !void {
     c.SetConfigFlags(c.FLAG_VSYNC_HINT | c.FLAG_WINDOW_RESIZABLE);
     c.InitWindow(conf.WIN_WIDTH, conf.WIN_HEIGHT, "Cosmic Invaders");
     c.InitAudioDevice();
-    c.SetTargetFPS(60);
+    //c.SetTargetFPS(60);
     defer c.CloseWindow();
 
     try res.Resources.Load();
@@ -137,9 +137,25 @@ fn draw() !void {
     c.BeginDrawing();
     defer c.EndDrawing();
 
-    c.ClearBackground(c.WHITE);
+    // Since we always redraw the screen this is not-needed and it helps avoid
+    // little white edges occurring on screen shake!
+    //c.ClearBackground(c.WHITE);
+
+    if (state.mGame.mShakeIntensity > 0.01) {
+        c.rlPushMatrix();
+        const time: f32 = @floatFromInt(state.mGame.mTicks);
+        const shakeOffsetX = @cos(time * 50.0) * state.mGame.mShakeIntensity;
+        const shakeOffsetY = @sin(time * 50.0) * state.mGame.mShakeIntensity;
+        c.rlTranslatef(shakeOffsetX, shakeOffsetY, 0);
+    }
 
     try state.mGame.draw();
+
+    defer if (state.mGame.mShakeIntensity > 0.01) {
+        c.rlPopMatrix();
+        state.mGame.mShakeIntensity *= 0.9;
+        //state.mGame.mShakeCountdown -= 1;
+    };
 
     c.DrawRectangle(0, conf.LAND_HEIGHT, conf.WIN_WIDTH, 2, c.YELLOW);
 

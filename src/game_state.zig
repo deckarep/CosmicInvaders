@@ -16,6 +16,7 @@ pub var mGame: GameState = undefined;
 pub const GameState = struct {
     mAllocator: std.mem.Allocator,
     mTicks: usize = 0,
+    mShakeIntensity: f32 = conf.InitialShakeIntensity,
     mWave: usize = 0,
 
     mWaveBanner: bnnr.WaveBanner = undefined,
@@ -305,6 +306,14 @@ pub const GameState = struct {
                 c.YELLOW,
             );
         }
+    }
+
+    pub fn beginShake(self: *Self) void {
+        self.mShakeIntensity = conf.InitialShakeIntensity;
+    }
+
+    pub fn endShake(self: *Self) void {
+        self.mShakeIntensity = 0;
     }
 
     pub fn createPoofExplosion(self: *Self, x: f32, y: f32) !void {

@@ -36,8 +36,8 @@ pub const Hive = struct {
     mRows: usize = 1,
 
     mDirection: f32 = 1,
-    mHorizontalSpeed: f32 = 1,
-    mDescendingSpeed: f32 = 1,
+    mHorizontalSpeed: f32 = conf.HiveHorizontalSpeed,
+    mDescendingSpeed: f32 = conf.HiveDescendSpeed,
     mDescendCountdown: i32 = conf.DescendCountdown,
     mAttackCountdown: i32 = conf.AttackCooldown,
     mSwapCountdown: i32 = conf.SwapCooldown,
@@ -124,10 +124,12 @@ pub const Hive = struct {
                     .HitGround => {
                         std.debug.print("culling invader due to hitting ground\n", .{});
                         try state.mGame.createMiniRedFloatingScore("-1", currInv.mX, currInv.mY);
+                        state.mGame.beginShake();
                     },
                     .HitWeaponStation => {
                         std.debug.print("culling invader due to hitting a weapon station\n", .{});
                         try state.mGame.createMiniRedFloatingScore("-10", currInv.mX, currInv.mY);
+                        state.mGame.beginShake();
                     },
                     .PlayerProjectile => {
                         try state.mGame.createSmallWhiteFloatingScore("+20", currInv.mX, currInv.mY);
@@ -219,6 +221,14 @@ pub const Hive = struct {
         if (self.mInvaders.items.len == 0) {
             // TODO: Hive must have been wiped out, spawn a new wave.
             return;
+        }
+
+        if (c.IsKeyDown(c.KEY_LEFT_SHIFT)) {
+            self.mHorizontalSpeed = 5;
+            self.mDescendingSpeed = 5;
+        } else {
+            self.mHorizontalSpeed = conf.HiveHorizontalSpeed;
+            self.mDescendingSpeed = conf.HiveDescendSpeed;
         }
 
         var purgeOneOrMoreDead = false;
