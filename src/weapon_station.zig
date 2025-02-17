@@ -12,15 +12,15 @@ pub const WeaponStationKind = enum(u8) {
 };
 
 pub const StationCondition = enum(u8) {
-    New,
-    Firing,
-    Exploding, // Show explosion, various fire-balls and sharapnel.
-    Dead, // Actually reap the object.
+    Normal, // Building is in normal static state.
+    Firing, // Building is firing.
+    Collapsing, // Building is actively collapsing and emitting various fire-balls and sharapnel.
+    Dead, // Removed from screen, reaped from memory.
 };
 
 pub const WeaponStation = struct {
     mKind: WeaponStationKind,
-    mCondition: StationCondition = .New,
+    mCondition: StationCondition = .Normal,
     mX: f32 = 180,
     mY: f32 = 372,
     mHealth: u8 = 100, // express as percent or some other unit?
@@ -43,29 +43,51 @@ pub const WeaponStation = struct {
     }
 
     pub fn update(self: *Self) !void {
-        self.mFireCountdown -= 1;
-        const shouldFire = self.mFireCountdown == 0;
-
         switch (self.mKind) {
             .Canon => {
-                if (shouldFire) {
-                    const x = self.mX + ((29 * 2) / 2);
-                    try state.mGame.spawnCanonBullet(x, self.mY);
-                    c.PlaySound(res.Resources.Sfx.LaserFire);
-                    self.mFireCountdown = conf.CanonCooldown;
-                    self.mFrameIdx += 1;
-                    return;
+                switch (self.mCondition) {
+                    .Normal => {
+                        // Should we be collapsing?
+                        if (self.mHealth <= 0) {
+                            self.mCondition = .Collapsing;
+                            return;
+                        }
+
+                        // Should we be firing?
+                        self.mFireCountdown -= 1;
+                        const shouldFire = self.mFireCountdown == 0;
+                        if (shouldFire) {
+                            self.mCondition = .Firing;
+                        }
+                    },
+                    .Firing => {
+                        const x = self.mX + ((29 * 2) / 2);
+                        try state.mGame.spawnCanonBullet(x, self.mY);
+                        c.PlaySound(res.Resources.Sfx.LaserFire);
+                        self.mFireCountdown = conf.CanonCooldown;
+                        self.mFrameIdx += 1;
+                        self.mCondition = .Normal;
+                        return;
+                    },
+                    .Collapsing => {
+                        // Spawn an explosion in a random x/y coord within the bounds of the weapon station.
+                        const wsBounds = self.getBounds();
+                        const x = c.GetRandomValue(0, @intFromFloat(wsBounds.width));
+                        const y = c.GetRandomValue(0, @intFromFloat(wsBounds.height));
+                        try state.mGame.spawnFieryExplosion(self.mX + @as(f32, @floatFromInt(x)), self.mY + @as(f32, @floatFromInt(y)));
+
+                        self.mCondition = .Dead;
+                    },
+                    .Dead => {
+                        // Nothing for now, but once in this state, this weapon station will be reaped!
+                    },
                 }
             },
             .TeslaCoil => {
-                if (shouldFire) {
-                    self.mFireCountdown = conf.CanonCooldown;
-                }
+                // TODO
             },
             .RocketLauncher => {
-                if (shouldFire) {
-                    self.mFireCountdown = conf.CanonCooldown;
-                }
+                // TODO
             },
         }
 
@@ -127,11 +149,13 @@ pub const WeaponStation = struct {
     }
 
     pub inline fn dead(self: Self) bool {
-        return self.mHealth <= 0;
+        //return self.mHealth <= 0;
+        return self.mCondition == .Dead;
     }
 
     pub fn checkHit(self: *Self, projBounds: c.Rectangle, amount: u8) bool {
-        if (self.dead()) return false;
+        // NOTE: dead or collapsing weapon stations, should not be collidable.
+        if (self.dead() or self.mCondition == .Collapsing) return false;
 
         if (c.CheckCollisionRecs(projBounds, self.getBounds())) {
             self.mHealth -= amount;

@@ -118,21 +118,21 @@ pub const Hive = struct {
             const currInv = self.mInvaders.items[len - 1];
             if (currInv.dead()) {
                 // When invader is dead, spawn a poof explosion as well as a -1 red mini score.
-                try state.mGame.createPoofExplosion(currInv.mX, currInv.mY);
+                try state.mGame.spawnPoofExplosion(currInv.mX, currInv.mY);
 
                 switch (currInv.mDeathReason.?) {
                     .HitGround => {
                         std.debug.print("culling invader due to hitting ground\n", .{});
-                        try state.mGame.createMiniRedFloatingScore("-1", currInv.mX, currInv.mY);
+                        try state.mGame.spawnMiniRedFloatingScore("-1", currInv.mX, currInv.mY);
                         state.mGame.beginShake();
                     },
                     .HitWeaponStation => {
                         std.debug.print("culling invader due to hitting a weapon station\n", .{});
-                        try state.mGame.createMiniRedFloatingScore("-10", currInv.mX, currInv.mY);
+                        try state.mGame.spawnMiniRedFloatingScore("-10", currInv.mX, currInv.mY);
                         state.mGame.beginShake();
                     },
                     .PlayerProjectile => {
-                        try state.mGame.createSmallWhiteFloatingScore("+20", currInv.mX, currInv.mY);
+                        try state.mGame.spawnSmallWhiteFloatingScore("+20", currInv.mX, currInv.mY);
                     },
                 }
 

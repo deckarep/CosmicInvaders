@@ -16,7 +16,7 @@ pub var mGame: GameState = undefined;
 pub const GameState = struct {
     mAllocator: std.mem.Allocator,
     mTicks: usize = 0,
-    mShakeIntensity: f32 = conf.InitialShakeIntensity,
+    mShakeIntensity: f32 = 0,
     mWave: usize = 0,
 
     mWaveBanner: bnnr.WaveBanner = undefined,
@@ -150,7 +150,7 @@ pub const GameState = struct {
             for (self.mWeaponStations.items) |*ws| {
                 const projBounds = currProj.getBounds();
                 if (ws.checkHit(projBounds, 10)) {
-                    try self.createPoofExplosion(currProjPos.x, currProjPos.y);
+                    try self.spawnPoofExplosion(currProjPos.x, currProjPos.y);
                     currProj.deinit();
                     _ = self.mEnemyProjectiles.swapRemove(len - 1);
                     std.debug.print("enemy proj hit a station\n", .{});
@@ -160,7 +160,7 @@ pub const GameState = struct {
 
             // 3. Check on collision w/ land.
             if (currProjPos.y >= conf.LAND_HEIGHT) {
-                try self.createPoofExplosion(currProjPos.x, currProjPos.y);
+                try self.spawnPoofExplosion(currProjPos.x, currProjPos.y);
                 currProj.deinit();
                 _ = self.mEnemyProjectiles.swapRemove(len - 1);
                 std.debug.print("enemy proj hit ground\n", .{});
@@ -211,7 +211,7 @@ pub const GameState = struct {
             var currExp = &self.mInplaceExplosions.items[len - 1];
             try currExp.update();
 
-            if (currExp.ended) {
+            if (currExp.ended()) {
                 _ = self.mInplaceExplosions.swapRemove(len - 1);
             }
         }
@@ -316,11 +316,17 @@ pub const GameState = struct {
         self.mShakeIntensity = 0;
     }
 
-    pub fn createPoofExplosion(self: *Self, x: f32, y: f32) !void {
-        try self.mInplaceExplosions.append(exp.Explosion.create(x, y, res.Resources.Effects.Poof));
+    pub fn spawnFieryExplosion(self: *Self, x: f32, y: f32) !void {
+        var e = exp.Explosion.create(x, y, 11, res.Resources.Effects.FieryExplosion);
+        e.setKind(.Rising);
+        try self.mInplaceExplosions.append(e);
     }
 
-    pub fn createMiniRedFloatingScore(self: *Self, text: [:0]const u8, x: f32, y: f32) !void {
+    pub fn spawnPoofExplosion(self: *Self, x: f32, y: f32) !void {
+        try self.mInplaceExplosions.append(exp.Explosion.create(x, y, 7, res.Resources.Effects.Poof));
+    }
+
+    pub fn spawnMiniRedFloatingScore(self: *Self, text: [:0]const u8, x: f32, y: f32) !void {
         try self.mFloatingScores.append(fls.FloatingScore.create(
             text,
             x,
@@ -329,7 +335,7 @@ pub const GameState = struct {
         ));
     }
 
-    pub fn createSmallWhiteFloatingScore(self: *Self, text: [:0]const u8, x: f32, y: f32) !void {
+    pub fn spawnSmallWhiteFloatingScore(self: *Self, text: [:0]const u8, x: f32, y: f32) !void {
         try self.mFloatingScores.append(fls.FloatingScore.create(
             text,
             x,

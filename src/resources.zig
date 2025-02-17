@@ -25,6 +25,7 @@ pub const Resources = struct {
         pub var Poof: c.Texture = undefined;
         pub var Puff1: c.Texture = undefined;
         pub var Puff2: c.Texture = undefined;
+        pub var FieryExplosion: c.Texture = undefined;
     };
 
     // Game Fonts.
@@ -70,6 +71,7 @@ pub const Resources = struct {
         Resources.Effects.Poof = loadTexture(ROOT_PATH ++ "poof.sz.png");
         Resources.Effects.Puff1 = loadTexture(ROOT_PATH ++ "puff1.sz.png");
         Resources.Effects.Puff2 = loadTexture(ROOT_PATH ++ "puff2.sz.png");
+        Resources.Effects.FieryExplosion = loadTexture(ROOT_PATH ++ "explosion_small.sz.png");
 
         // Fonts
         Resources.Fonts.Font1 = loadFont(ROOT_PATH ++ "font_big_red_xna.png");
@@ -136,6 +138,7 @@ pub const Resources = struct {
         unloadTexture(Resources.Effects.Poof);
         unloadTexture(Resources.Effects.Puff1);
         unloadTexture(Resources.Effects.Puff2);
+        unloadTexture(Resources.Effects.FieryExplosion);
 
         // Font
         unloadFont(Resources.Fonts.Font1);

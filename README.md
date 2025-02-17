@@ -36,7 +36,7 @@ even diverge or change some aspects of the game such as the graphics, enemies, s
 # Original
 
 - [ ] On start game, player starts with 550 money, 25 health points
-- [ ] Weapons
+- [ ] Weapons:
     - [ ] Lazer Canon Turret = 140 - simply fires projectile up
     - [ ] Missle Battery = 350 - fires a heat seeking, exploding missle
     - [ ] Spark Tower = 550 - emits a catastrophic spark of electricity
@@ -49,7 +49,12 @@ even diverge or change some aspects of the game such as the graphics, enemies, s
 - [x] Hit on invader makes it flash white, invader now becomes red
 - [x] Between waves, all player's buildings remain
 - [x] On building hit, show a single dust cloud
-- [x] When building is below X percent, show repeated dust clouds
+- [x] On building collapse:
+    - [x] Show a timed release of 3 to 5 fiery explosions
+    - [x] Station becomes dead (removed) from scene
+    - [ ] End with exploding sharapenel that bounces a few times on ground
+- [ ] When alien bullet hits weapon station, show a single smoke plume (just one).
+- [x] When building is below X percent, show repeated smoke plumes.
 - [ ] Buildings cannot overlap on user placement, if overlapped render as red and don't allow placing it
 - [ ] When an invader is hit, his framerate speeds up temporarily to illustrate injury (faster pulsing)
 - [ ] Each new building costs more than the last
