@@ -6,7 +6,8 @@ pub const SCALE_FACTOR = 2;
 pub const WIN_WIDTH = 320 * SCALE_FACTOR;
 pub const WIN_HEIGHT = 240 * SCALE_FACTOR;
 pub const LAND_HEIGHT = 213 * SCALE_FACTOR;
-pub const InitialShakeIntensity = 0.9;
+pub const INITIAL_SHAKE_INTENSITY = 1.3;
+pub const DECAY_SHAKE_INTENSITY = 0.9;
 
 pub const FontColor = struct {
     pub const Red = c.Color{

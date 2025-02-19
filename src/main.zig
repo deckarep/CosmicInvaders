@@ -85,6 +85,19 @@ fn color24Eq(a: zigimg.color.Rgb24, b: zigimg.color.Rgb24) bool {
     return a.r == b.r and a.g == b.g and a.b == b.b;
 }
 
+fn inShakeScope() void {
+    c.rlPushMatrix();
+    const time: f32 = @floatFromInt(state.mGame.mTicks);
+    const shakeOffsetX = @cos(time * 50.0) * state.mGame.mShakeIntensity;
+    const shakeOffsetY = @sin(time * 50.0) * state.mGame.mShakeIntensity;
+    c.rlTranslatef(shakeOffsetX, shakeOffsetY, 0);
+}
+
+fn outShakeScope() void {
+    c.rlPopMatrix();
+    state.mGame.mShakeIntensity *= conf.DECAY_SHAKE_INTENSITY;
+}
+
 pub fn main() !void {
     // Prints to stderr (it's a shortcut based on `std.io.getStdErr()`)
     std.debug.print("All your {s} are belong to us.\n", .{"codebase"});
@@ -145,20 +158,16 @@ fn draw() !void {
     // little white edges occurring on screen shake!
     //c.ClearBackground(c.WHITE);
 
-    if (state.mGame.mShakeIntensity > 0.01) {
-        c.rlPushMatrix();
-        const time: f32 = @floatFromInt(state.mGame.mTicks);
-        const shakeOffsetX = @cos(time * 50.0) * state.mGame.mShakeIntensity;
-        const shakeOffsetY = @sin(time * 50.0) * state.mGame.mShakeIntensity;
-        c.rlTranslatef(shakeOffsetX, shakeOffsetY, 0);
+    const isShaking = state.mGame.mShakeIntensity > 0.01;
+    if (isShaking) {
+        inShakeScope();
     }
 
+    // Anything drawn in here, will shake.
     try state.mGame.draw();
 
-    defer if (state.mGame.mShakeIntensity > 0.01) {
-        c.rlPopMatrix();
-        state.mGame.mShakeIntensity *= 0.9;
-        //state.mGame.mShakeCountdown -= 1;
+    defer if (isShaking) {
+        outShakeScope();
     };
 
     c.DrawRectangle(0, conf.LAND_HEIGHT, conf.WIN_WIDTH, 2, c.YELLOW);

@@ -309,7 +309,7 @@ pub const GameState = struct {
     }
 
     pub fn beginShake(self: *Self) void {
-        self.mShakeIntensity = conf.InitialShakeIntensity;
+        self.mShakeIntensity = conf.INITIAL_SHAKE_INTENSITY;
     }
 
     pub fn endShake(self: *Self) void {

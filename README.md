@@ -35,6 +35,9 @@ even diverge or change some aspects of the game such as the graphics, enemies, s
 
 # Original
 
+- [ ] Original game runs at: 320x240, this game should as well but default to 640x480 and then 
+      magically scale up/down based on user doing some resizing of the window. 
+      All pixel-art must remain sharp.
 - [ ] On start game, player starts with 550 money, 25 health points
 - [ ] Weapons:
     - [ ] Lazer Canon Turret = 140 - simply fires projectile up
@@ -42,7 +45,7 @@ even diverge or change some aspects of the game such as the graphics, enemies, s
     - [ ] Spark Tower = 550 - emits a catastrophic spark of electricity
 - [ ] On game over, show GAME OVER banner, WAVES DEFEATED: <howmany>
 - [x] Max of 12 invaders per row
-- [ ] Every level, a new set of invaders is spawn in symmetrical formation
+- [ ] Every level, a new set of invaders spawns in a symmetrical formation
 - [ ] Upon hit of weapon station, screen shake
 - [ ] Upon weapon station blowing up, longer screen shake
 - [ ] On game over screen, everything is rendered in monochrome greyscale except banner
@@ -56,8 +59,8 @@ even diverge or change some aspects of the game such as the graphics, enemies, s
 - [ ] When alien bullet hits weapon station, show a single smoke plume (just one).
 - [x] When building is below X percent, show repeated smoke plumes.
 - [ ] Buildings cannot overlap on user placement, if overlapped render as red and don't allow placing it
-- [ ] When an invader is hit, his framerate speeds up temporarily to illustrate injury (faster pulsing)
-- [ ] Each new building costs more than the last
-- [ ] BOSS FIGHT: Every 5 levels (confirm this), a boss shows up drops red balls, green bubble with red eye
-      Invaders will fly in circular motion around it, protecting it
-- [ ] More notable settings and increase factors can be found here: `data/strings.txt`
+- [ ] When an invader is hit, his framerate speeds up temporarily to illustrate injury (faster pulsating)
+- [ ] Each new building costs more than the last (verify)
+- [ ] BOSS FIGHT: Every 5 levels (confirm this), a boss shows up drops red balls, green bubble with 
+      red eye. Invaders will fly in circular motion around it, protecting it
+- [ ] Additional settings (from original game) and factors can be found here: `data/strings.txt`
