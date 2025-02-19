@@ -105,6 +105,9 @@ pub fn main() !void {
         }
     };
 
+    // const oop = @import("oop.zig");
+    // try oop.testOop(alloc);
+
     //try regenAllBitmaps();
 
     c.SetConfigFlags(c.FLAG_VSYNC_HINT | c.FLAG_WINDOW_RESIZABLE);
@@ -112,6 +115,7 @@ pub fn main() !void {
     c.InitAudioDevice();
     //c.SetTargetFPS(60);
     defer c.CloseWindow();
+    defer c.CloseAudioDevice();
 
     try res.Resources.Load();
     defer res.Resources.Unload();
