@@ -2,3 +2,4 @@
 .zig-cache
 zig-out
 data/*.png
+drum_sequence.wav

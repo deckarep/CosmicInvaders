@@ -100,8 +100,6 @@ fn outShakeScope() void {
 }
 
 pub fn main() !void {
-    mixer.genWav();
-    std.process.exit(0);
     // Prints to stderr (it's a shortcut based on `std.io.getStdErr()`)
     std.debug.print("All your {s} are belong to us.\n", .{"codebase"});
 
@@ -120,6 +118,9 @@ pub fn main() !void {
             std.debug.print("You lack discipline! Leaks detected!\n", .{});
         }
     };
+
+    try mixer.genWav(alloc);
+    std.process.exit(0);
 
     // const rtpm = @import("runtime_polymorphism.zig");
     // try rtpm.testRtpm(alloc);

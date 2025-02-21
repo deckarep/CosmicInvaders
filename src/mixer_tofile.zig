@@ -23,7 +23,7 @@ var tomhi: c.Wave = undefined;
 var tomlow: c.Wave = undefined;
 var rim: c.Wave = undefined;
 
-pub fn genWav() void {
+pub fn genWav(allocator: std.mem.Allocator) !void {
     c.InitAudioDevice(); // Needed for `LoadWave()`
 
     // Load drum samples
@@ -35,7 +35,7 @@ pub fn genWav() void {
     cowbell = c.LoadWave("data/drum_samples/cowbell.wav");
     tomhi = c.LoadWave("data/drum_samples/tom-hi.wav");
     tomlow = c.LoadWave("data/drum_samples/tom-low.wav");
-    rim = c.LoadWave("data/drum_samples/rim.wav");
+    rim = c.LoadWave("data/drum_samples/rim-shot.wav");
 
     // Clean up memory
     defer c.UnloadWave(kick);
@@ -90,7 +90,8 @@ pub fn genWav() void {
     };
 
     // Generate the WAV sequence
-    const mixedWave = generateSequence(&patterns, 30, bpm); // 30-second drum loop
+    const mixedWave = try generateSequence(&patterns, 30, bpm, allocator); // 30-second drum loop
+    //defer allocator.free(mixedWave.data);
     if (!c.ExportWave(mixedWave, "drum_sequence.wav")) {
         std.debug.print("Failed to dump .wav file!\n", .{});
     }
@@ -106,18 +107,62 @@ fn mixWave(buffer: []i16, wave: *c.Wave, start_sample: usize, volume: f32) void 
     }
 }
 
-fn generateSequence(patterns: []const Pattern, comptime duration: u32, comptime bpm: u32) c.Wave {
+// NOT WORKING
+fn applyFadeOut(buffer: []i16, fade_duration_ms: usize) void {
+    const fade_samples = (SAMPLE_RATE * fade_duration_ms) / 1000;
+    const total_samples = buffer.len;
+
+    if (fade_samples >= total_samples) {
+        return; // Avoid fade-out if the duration is too long
+    }
+
+    for (0..fade_samples) |i| {
+        const fade_factor = @as(f32, @floatFromInt(fade_samples - i)) / @as(f32, @floatFromInt(fade_samples));
+        buffer[total_samples - fade_samples + i] = @intFromFloat(@as(f32, @floatFromInt(buffer[total_samples - fade_samples + i])) * fade_factor);
+    }
+}
+
+// NOT WORKING
+fn trimWaveEnd(buffer: []i16, total_samples: usize, silence_threshold: i16) void {
+    var last_non_silent_index: usize = total_samples;
+
+    for (0..total_samples) |i| {
+        if (@abs(buffer[i]) > silence_threshold) {
+            last_non_silent_index = i;
+        }
+    }
+
+    // Clear remaining samples
+    for (last_non_silent_index + 1..total_samples) |i| {
+        buffer[i] = 0;
+    }
+}
+
+fn generateSequence(
+    patterns: []const Pattern,
+    comptime duration: u32,
+    comptime bpm: u32,
+    allocator: std.mem.Allocator,
+) !c.Wave {
     const beats_per_second = @as(f32, @floatFromInt(bpm)) / 60.0;
     const total_beats = beats_per_second * @as(f32, @floatFromInt(duration));
     const beat_samples = (SAMPLE_RATE * 60) / bpm;
     const total_samples = @as(usize, @intFromFloat(total_beats * @as(f32, beat_samples)));
-    //const total_samples = SAMPLE_RATE * duration;
-    var buffer: [total_samples]i16 = [_]i16{0} ** total_samples;
 
-    // Calculate beats per minute timing
-    const step_samples = @as(usize, @intFromFloat(@as(f32, @floatFromInt(beat_samples)) / 4.0)); // Assuming 16th-note resolution
+    //var buffer: [total_samples]i16 = [_]i16{0} ** total_samples;
+    const buffer = try allocator.alloc(i16, total_samples);
+
+    // Step duration in samples (16th-note resolution)
+    const step_samples = @as(usize, @intFromFloat(@as(f32, @floatFromInt(beat_samples)) / 4.0));
 
     for (patterns) |*p| {
+        // TODO: fix this shit!
+        // WARNING: Hardcode bullshit
+        // For a 32 beat pattern, 7 visual separators show up and should not be a part of this
+        // calculation. For 16 beats this number will be: 3
+        const pTimingLen = p.timing.len - 7;
+
+        const pattern_length_samples = pTimingLen * step_samples; // Exact length of one full pattern in samples
         var step: usize = 0;
         var timingIndex: usize = 0;
 
@@ -125,21 +170,38 @@ fn generateSequence(patterns: []const Pattern, comptime duration: u32, comptime 
             if (p.timing[timingIndex] == '|') {
                 continue; // Ignore visual separator
             }
+
             if (p.timing[timingIndex] == 'x') {
-                const start_sample = step * step_samples;
-                if (start_sample < buffer.len) {
-                    mixWave(&buffer, p.sample, start_sample, p.volume);
+                var start_sample: usize = (step % pTimingLen) * step_samples; //step * step_samples;
+                // std.debug.print("name => {s}, step => {d}, p.timing.len => {d}, step_samples => {d}, start_sample => {d}\n", .{
+                //     p.name,
+                //     step + 1,
+                //     p.timing.len,
+                //     step_samples,
+                //     start_sample,
+                // });
+
+                // Loop pattern continuously across the full buffer
+                while (start_sample < buffer.len) : (start_sample += pattern_length_samples) {
+                    if (start_sample + step_samples <= buffer.len) {
+                        mixWave(buffer, p.sample, start_sample, p.volume);
+                    }
                 }
             }
             step += 1; // Only increment step for valid beats
         }
     }
 
+    // These two lines are not working yet...
+    // Still hearing artifcats at the end of the sound effect.
+    applyFadeOut(buffer, 150); // Smooth fade-out over last 150ms
+    trimWaveEnd(buffer, total_samples, 10); // Remove low-level noise
+
     return c.Wave{
         .sampleRate = SAMPLE_RATE,
         .sampleSize = BIT_DEPTH,
         .channels = CHANNELS,
         .frameCount = total_samples,
-        .data = &buffer,
+        .data = buffer.ptr,
     };
 }
