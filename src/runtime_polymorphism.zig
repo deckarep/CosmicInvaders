@@ -43,7 +43,7 @@ pub const Weapon = struct {
     }
 };
 
-pub fn testOop(allocator: std.mem.Allocator) !void {
+pub fn testRtpm(allocator: std.mem.Allocator) !void {
     const wep = try allocator.create(Weapon);
     wep.publish("Hell yeah!");
 

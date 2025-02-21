@@ -8,6 +8,7 @@ const exp = @import("explosion.zig");
 const res = @import("resources.zig");
 const drw = @import("draw.zig");
 const c = @import("cdefs.zig").c;
+const mixer = @import("mixer_tofile.zig");
 
 // NOTE: This magic selects which concrete allocator depending on build mode.
 const GPA = std.heap.GeneralPurposeAllocator(.{ .safety = true });
@@ -99,6 +100,8 @@ fn outShakeScope() void {
 }
 
 pub fn main() !void {
+    mixer.genWav();
+    std.process.exit(0);
     // Prints to stderr (it's a shortcut based on `std.io.getStdErr()`)
     std.debug.print("All your {s} are belong to us.\n", .{"codebase"});
 
@@ -118,8 +121,11 @@ pub fn main() !void {
         }
     };
 
-    // const oop = @import("oop.zig");
-    // try oop.testOop(alloc);
+    // const rtpm = @import("runtime_polymorphism.zig");
+    // try rtpm.testRtpm(alloc);
+
+    // const ctpm = @import("comptime_polymorphism.zig");
+    // try ctpm.testCtpm(alloc);
 
     //try regenAllBitmaps();
 
