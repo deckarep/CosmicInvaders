@@ -56,7 +56,7 @@ pub fn genWav(allocator: std.mem.Allocator) !void {
 
     //const bpm: u32 = 138; //Madonna Burning Up
     //const bpm: u32 = 118; // Thriller
-    const bpm: u32 = 118; // Testing
+    const bpm: u32 = 127; // Testing
 
     // Define the beat pattern
     const patterns = [_]Pattern{
@@ -88,11 +88,11 @@ pub fn genWav(allocator: std.mem.Allocator) !void {
         // Pattern{ .timing = "____|x___|____|x___|____|x___|____|x___|____|x___|____|x___|____|x___|____|x___", .name = "clap", .volume = 0.5, .sample = &clap },
 
         // 19 - Paul Hardcastle - 32 beats - 118bpm
-        Pattern{ .timing = "xx-x|---x|--x-|x---|xx-x|---x|--x-|x---", .name = "bd", .sample = &kick },
-        Pattern{ .timing = "----|x---|----|x---|----|x---|----|x-xx", .name = "sd", .sample = &snare },
-        Pattern{ .timing = "x--x|--x-|--xx|x---|x--x|--x-|--x-|-x--", .name = "rs", .sample = &rim },
-        Pattern{ .timing = "----|x---|----|x---|----|x---|----|x-xx", .name = "cp", .sample = &clap },
-        Pattern{ .timing = "xxxx|xxxx|xxxx|xxxx|xxxx|xxxx|xxxx|xxxx", .name = "ch", .sample = &hihat_closed },
+        // Pattern{ .timing = "xx-x|---x|--x-|x---|xx-x|---x|--x-|x---", .name = "bd", .sample = &kick },
+        // Pattern{ .timing = "----|x---|----|x---|----|x---|----|x-xx", .name = "sd", .sample = &snare },
+        // Pattern{ .timing = "x--x|--x-|--xx|x---|x--x|--x-|--x-|-x--", .name = "rs", .sample = &rim },
+        // Pattern{ .timing = "----|x---|----|x---|----|x---|----|x-xx", .name = "cp", .sample = &clap },
+        // Pattern{ .timing = "xxxx|xxxx|xxxx|xxxx|xxxx|xxxx|xxxx|xxxx", .name = "ch", .sample = &hihat_closed },
 
         // ✅ Hangin' on a String - Loose Ends - 32 beats - 105bpm
         // Pattern{ .timing = "x---|--x-|x---|----|x---|--x-|x---|----", .name = "bd", .sample = &kick },
@@ -115,10 +115,10 @@ pub fn genWav(allocator: std.mem.Allocator) !void {
         // Pattern{ .timing = "xxxx|xxxx|xxxx|xxxx|xxxx|xxxx|xxxx|xxxx", .name = "closed_hat", .volume = 0.75, .sample = &hihat_closed },
 
         // ✅ Part 2 (Egypt Egypt) ChatGPT AI beat attempt
-        // Pattern{ .timing = "x---|--x-|x--x|-x--|x---|--x-|--x-|--x-", .name = "kick", .sample = &kick },
-        // Pattern{ .timing = "----|x---|----|x---|----|x-x-|----|x---", .name = "snare", .sample = &snare },
-        // Pattern{ .timing = "x-x-|xxx-|x-xx|-xx-|x-x-|x-xx|x-x-|-xx-", .name = "cowbell", .volume = 1.0, .sample = &cowbell },
-        // Pattern{ .timing = "xxxx|xxxx|xxxx|xxxx|xxxx|xxxx|xxxx|----", .name = "closed_hat", .volume = 0.75, .sample = &hihat_closed },
+        Pattern{ .timing = "x---|--x-|x--x|-x--|x---|--x-|--x-|--x-", .name = "kick", .sample = &kick },
+        Pattern{ .timing = "----|x---|----|x---|----|x-x-|----|x---", .name = "snare", .sample = &snare },
+        Pattern{ .timing = "x-x-|xxx-|x-xx|-xx-|x-x-|x-xx|x-x-|-xx-", .name = "cowbell", .volume = 1.0, .sample = &cowbell },
+        Pattern{ .timing = "xxxx|xxxx|xxxx|xxxx|xxxx|xxxx|xxxx|----", .name = "closed_hat", .volume = 0.75, .sample = &hihat_closed },
 
         // ✅ Jam on It 32 Beats - 116 bpm - PERFECT!
         // Pattern{ .timing = "x---|---x|-xx-|--x-|xx--|---x|-xx-|x-x-", .name = "kick", .sample = &kick },
