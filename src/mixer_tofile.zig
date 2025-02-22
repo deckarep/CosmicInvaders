@@ -7,16 +7,27 @@ const c = @import("cdefs.zig").c;
 // Can we take a text pattern => in-memory mixed waveform all at comptime?
 // We could if our samples were not loaded as files but embeded binary data.
 
+const LOOP_DURATION = 30;
 const SAMPLE_RATE = 44100; // Standard audio sample rate
 const BUFFER_SIZE = 44100; // 1 second of audio data (44100 samples)
 const CHANNELS = 1; // Mono audio
 const BIT_DEPTH = 16; // 16-bit audio
 
-const Pattern = struct {
+var totalSamples: usize = 0;
+
+const Track = struct {
     timing: []const u8, // "x---|x---|x---|x-x-"
     name: []const u8, // The instrument name (e.g., "kick")
     volume: f32 = 1.0, // Volume multiplier, 1.0 is default when unspecified.
     sample: *c.Wave, // Loaded WAV file
+};
+
+const Sequence = struct {
+    Artist: []const u8,
+    Song: []const u8,
+    Year: ?u16 = null, //optional for now.
+    Bpm: u8,
+    TrackLayers: []const Track,
 };
 
 var kick: c.Wave = undefined;
@@ -28,6 +39,91 @@ var cowbell: c.Wave = undefined;
 var tomhi: c.Wave = undefined;
 var tomlow: c.Wave = undefined;
 var rim: c.Wave = undefined;
+
+// ✅ 19 - Paul Hardcastle - 32 beats - 118bpm
+const seq19 = Sequence{
+    .Song = "19",
+    .Artist = "Paul Hardcastle",
+    .Bpm = 118,
+    .TrackLayers = &.{
+        Track{ .timing = "xx-x|---x|--x-|x---|xx-x|---x|--x-|x---", .name = "bd", .sample = &kick },
+        Track{ .timing = "----|x---|----|x---|----|x---|----|x-xx", .name = "sd", .sample = &snare },
+        Track{ .timing = "x--x|--x-|--xx|x---|x--x|--x-|--x-|-x--", .name = "rs", .sample = &rim },
+        Track{ .timing = "----|x---|----|x---|----|x---|----|x-xx", .name = "cp", .sample = &clap },
+        Track{ .timing = "xxxx|xxxx|xxxx|xxxx|xxxx|xxxx|xxxx|xxxx", .name = "ch", .sample = &hihat_closed },
+    },
+};
+
+// ✅ Hangin' on a String - Loose Ends - 32 beats - 105bpm
+const seqHOT = Sequence{
+    .Song = "Hangin' on a String",
+    .Artist = "Loose Ends",
+    .Bpm = 105,
+    .TrackLayers = &.{
+        Track{ .timing = "x---|--x-|x---|----|x---|--x-|x---|----", .name = "bd", .sample = &kick },
+        Track{ .timing = "----|x---|----|x---|----|x---|----|x---", .name = "sd", .sample = &snare },
+        Track{ .timing = "---x|----|----|x---|----|----|----|----", .name = "rs", .sample = &rim },
+        Track{ .timing = "----|x---|----|x---|----|x---|----|x---", .name = "cp", .sample = &clap },
+        Track{ .timing = "----|----|--xx|xxx-|----|----|----|----", .name = "cb", .volume = 0.25, .sample = &cowbell },
+        Track{ .timing = "x---|----|----|----|----|----|x---|----", .name = "oh", .sample = &hihat_open },
+        Track{ .timing = "---x|x-x-|x--x|x-x-|x--x|x-x-|-x-x|xxx-", .name = "ch", .sample = &hihat_closed },
+    },
+};
+
+// ✅ Fix in the Mix - Prety Tony 32 beats - 129bpm
+const seqFITM = Sequence{
+    .Song = "Fix in the Mix",
+    .Artist = "Pretty Tony",
+    .Bpm = 129,
+    .TrackLayers = &.{
+        Track{ .timing = "x---|--x-|--x-|-x--|x---|--x-|----|----", .name = "kick", .sample = &kick },
+        Track{ .timing = "----|x---|----|x---|----|x---|----|x---", .name = "snare", .sample = &snare },
+        Track{ .timing = "x-xx|x-xx|x-xx|xxxx|x-xx|x-xx|x-xx|xxxx", .name = "ch", .sample = &hihat_closed },
+    },
+};
+
+// ✅ Egypt Egypt 32 beats - 127 - Close, missing accent programming. How to do?
+const seqEE = Sequence{
+    .Song = "Egypt Egypt",
+    .Artist = "Egyptian Lover",
+    .Bpm = 127,
+    .TrackLayers = &.{
+        Track{ .timing = "x---|--x-|--x-|-x--|x---|--x-|--x-|--x-", .name = "kick", .sample = &kick },
+        Track{ .timing = "----|x---|----|x---|----|x---|----|x---", .name = "snare", .sample = &snare },
+        Track{ .timing = "x-x-|xxx-|x-xx|-xx-|x-x-|xxx-|x-xx|-xx-", .name = "cowbell", .volume = 1.0, .sample = &cowbell },
+        Track{ .timing = "xxxx|xxxx|xxxx|xxxx|xxxx|xxxx|xxxx|xxxx", .name = "closed_hat", .volume = 0.75, .sample = &hihat_closed },
+    },
+};
+
+// ✅ Part 2 (Egypt Egypt) ChatGPT AI beat attempt
+//Pattern{ .timing = "x---|--x-|x--x|-x--|x---|--x-|--x-|--x-", .name = "kick", .sample = &kick }, Pattern{ .timing = "----|x---|----|x---|----|x-x-|----|x---", .name = "snare", .sample = &snare }, Pattern{ .timing = "x-x-|xxx-|x-xx|-xx-|x-x-|x-xx|x-x-|-xx-", .name = "cowbell", .volume = 1.0, .sample = &cowbell }, Pattern{ .timing = "xxxx|xxxx|xxxx|xxxx|xxxx|xxxx|xxxx|----", .name = "closed_hat", .volume = 0.75, .sample = &hihat_closed },
+
+// ✅ Jam on It
+const seqJOI = Sequence{
+    .Song = "Jam On It",
+    .Artist = "Newcleus",
+    .Bpm = 116,
+    .TrackLayers = &.{
+        Track{ .timing = "x---|---x|-xx-|--x-|xx--|---x|-xx-|x-x-", .name = "kick", .sample = &kick },
+        Track{ .timing = "----|x---|----|x---|----|x---|----|x---", .name = "snare", .sample = &snare },
+        Track{ .timing = "----|x---|----|x---|----|x---|----|x---", .name = "clap", .sample = &clap },
+        Track{ .timing = "xxxx|xxxx|xxxx|xxxx|xxxx|xxxx|xxxx|xxxx", .name = "closed_hat", .volume = 0.75, .sample = &hihat_closed },
+    },
+};
+
+// ✅ Planet Rock.
+const seqPR = Sequence{
+    .Song = "Planet Rock",
+    .Artist = "Afrikaa Bambata",
+    .Bpm = 127,
+    .TrackLayers = &.{
+        Track{ .timing = "x---|--x-|----|----|x---|--x-|--x-|----", .name = "kick", .volume = 1.0, .sample = &kick },
+        Track{ .timing = "----|x---|----|x---|----|x---|----|x---", .name = "snare", .volume = 1.0, .sample = &snare },
+        Track{ .timing = "----|x---|----|x---|----|x---|----|x---", .name = "clap", .volume = 1.0, .sample = &clap },
+        Track{ .timing = "x-x-|x-xx|-x-x|x-x-|x-x-|x-xx|-x-x|x-x-", .name = "cowbell", .volume = 0.75, .sample = &cowbell },
+        Track{ .timing = "x-xx|x-xx|x-xx|xxxx|x-xx|x-xx|x-xx|xxxx", .name = "closed_hat", .volume = 0.75, .sample = &hihat_closed },
+    },
+};
 
 pub fn genWav(allocator: std.mem.Allocator) !void {
     c.InitAudioDevice(); // Needed for `LoadWave()`
@@ -56,101 +152,61 @@ pub fn genWav(allocator: std.mem.Allocator) !void {
 
     //const bpm: u32 = 138; //Madonna Burning Up
     //const bpm: u32 = 118; // Thriller
-    const bpm: u32 = 127; // Testing
+    //const bpm: u32 = 127; // Testing
 
     // Define the beat pattern
-    const patterns = [_]Pattern{
-        // Thriller - 118 bpm
-        // Pattern{ .timing = "x-x-|x-xx|x-x-|x-x-", .name = "hi-hat", .volume = 1.0, .sample = &hihat_closed },
-        // Pattern{ .timing = "----|----|---x|---x", .name = "hi-hat-long", .volume = 1.0, .sample = &hihat_open },
-        // Pattern{ .timing = "---x|--x-|----|----", .name = "conga-high", .volume = 1.0, .sample = &tomhi },
-        // Pattern{ .timing = "----|x---|x--x|--x-", .name = "conga-low", .volume = 1.0, .sample = &tomlow },
-        // Pattern{ .timing = "---x|---x|----|----", .name = "cowbell", .volume = 1.0, .sample = &cowbell },
-        // Pattern{ .timing = "----|----|----|x---", .name = "clap", .volume = 1.0, .sample = &clap },
-        // Pattern{ .timing = "----|x---|----|x---", .name = "snare", .volume = 1.0, .sample = &snare },
-        // Pattern{ .timing = "x---|x---|x---|x---", .name = "kick", .volume = 1.0, .sample = &kick },
-        // Pattern{ .timing = "x-x-|x-x-|x-x-|x-x-|x-x-|x-x-|x-x-|x-x-", .name = "hi-hat-short", .volume = 1.0, .sample = &hihat_closed },
-        // Pattern{ .timing = "----|----|----|---x|----|----|----|---x", .name = "hi-hat", .volume = 1.0, .sample = &hihat_open },
-        // Pattern{ .timing = "----|x-x-|----|x---|----|x-x-|----|x---", .name = "clap", .volume = 1.0, .sample = &clap },
-        // Pattern{ .timing = "----|x-x-|----|x---|----|x-x-|----|x---", .name = "snare-low", .volume = 1.0, .sample = &snare },
-        // Pattern{ .timing = "x---|x---|x---|x-x-|x---|x---|x---|x-x-", .name = "kick", .volume = 1.0, .sample = &kick },
+    // const patterns = [_]Pattern{
+    // Thriller - 118 bpm
+    // Pattern{ .timing = "x-x-|x-xx|x-x-|x-x-", .name = "hi-hat", .volume = 1.0, .sample = &hihat_closed },
+    // Pattern{ .timing = "----|----|---x|---x", .name = "hi-hat-long", .volume = 1.0, .sample = &hihat_open },
+    // Pattern{ .timing = "---x|--x-|----|----", .name = "conga-high", .volume = 1.0, .sample = &tomhi },
+    // Pattern{ .timing = "----|x---|x--x|--x-", .name = "conga-low", .volume = 1.0, .sample = &tomlow },
+    // Pattern{ .timing = "---x|---x|----|----", .name = "cowbell", .volume = 1.0, .sample = &cowbell },
+    // Pattern{ .timing = "----|----|----|x---", .name = "clap", .volume = 1.0, .sample = &clap },
+    // Pattern{ .timing = "----|x---|----|x---", .name = "snare", .volume = 1.0, .sample = &snare },
+    // Pattern{ .timing = "x---|x---|x---|x---", .name = "kick", .volume = 1.0, .sample = &kick },
+    // Pattern{ .timing = "x-x-|x-x-|x-x-|x-x-|x-x-|x-x-|x-x-|x-x-", .name = "hi-hat-short", .volume = 1.0, .sample = &hihat_closed },
+    // Pattern{ .timing = "----|----|----|---x|----|----|----|---x", .name = "hi-hat", .volume = 1.0, .sample = &hihat_open },
+    // Pattern{ .timing = "----|x-x-|----|x---|----|x-x-|----|x---", .name = "clap", .volume = 1.0, .sample = &clap },
+    // Pattern{ .timing = "----|x-x-|----|x---|----|x-x-|----|x---", .name = "snare-low", .volume = 1.0, .sample = &snare },
+    // Pattern{ .timing = "x---|x---|x---|x-x-|x---|x---|x---|x-x-", .name = "kick", .volume = 1.0, .sample = &kick },
 
-        // Burning up - Madonna
-        // Pattern{ .timing = "x-x-|x-x-|x-x-|x-x-", .name = "hi-hat-short", .volume = 1.0, .sample = &hihat_closed },
-        // Pattern{ .timing = "----|----|----|---x", .name = "hi-hat", .volume = 1.0, .sample = &hihat_open },
-        // Pattern{ .timing = "----|x-x-|----|x---", .name = "clap", .volume = 1.0, .sample = &clap },
-        // Pattern{ .timing = "----|x-x-|----|x---", .name = "snare-low", .volume = 1.0, .sample = &snare },
-        // Pattern{ .timing = "x---|x---|x---|x-x-", .name = "kick", .volume = 1.0, .sample = &kick },
+    // Burning up - Madonna
+    // Pattern{ .timing = "x-x-|x-x-|x-x-|x-x-", .name = "hi-hat-short", .volume = 1.0, .sample = &hihat_closed },
+    // Pattern{ .timing = "----|----|----|---x", .name = "hi-hat", .volume = 1.0, .sample = &hihat_open },
+    // Pattern{ .timing = "----|x-x-|----|x---", .name = "clap", .volume = 1.0, .sample = &clap },
+    // Pattern{ .timing = "----|x-x-|----|x---", .name = "snare-low", .volume = 1.0, .sample = &snare },
+    // Pattern{ .timing = "x---|x---|x---|x-x-", .name = "kick", .volume = 1.0, .sample = &kick },
 
-        // Test Sound: Sounds accurate to me so far:
-        // Pattern{ .timing = "xxxx|xxxx|xxxx|xxxx|xxxx|xxxx|xxxx|xxxx|xxxx|xxxx|xxxx|xxxx|xxxx|xxxx|xxxx|xxxx", .name = "tick", .volume = 0.5, .sample = &hihat_closed },
-        // Pattern{ .timing = "x___|x___|x___|x___|x___|x___|x___|x___|x___|x___|x___|x___|x___|x___|x___|x___", .name = "bass drum", .volume = 0.5, .sample = &kick },
-        // Pattern{ .timing = "____|x___|____|x___|____|x___|____|x___|____|x___|____|x___|____|x___|____|x___", .name = "clap", .volume = 0.5, .sample = &clap },
+    // Test Sound: Sounds accurate to me so far:
+    // Pattern{ .timing = "xxxx|xxxx|xxxx|xxxx|xxxx|xxxx|xxxx|xxxx|xxxx|xxxx|xxxx|xxxx|xxxx|xxxx|xxxx|xxxx", .name = "tick", .volume = 0.5, .sample = &hihat_closed },
+    // Pattern{ .timing = "x___|x___|x___|x___|x___|x___|x___|x___|x___|x___|x___|x___|x___|x___|x___|x___", .name = "bass drum", .volume = 0.5, .sample = &kick },
+    // Pattern{ .timing = "____|x___|____|x___|____|x___|____|x___|____|x___|____|x___|____|x___|____|x___", .name = "clap", .volume = 0.5, .sample = &clap },
 
-        // 19 - Paul Hardcastle - 32 beats - 118bpm
-        // Pattern{ .timing = "xx-x|---x|--x-|x---|xx-x|---x|--x-|x---", .name = "bd", .sample = &kick },
-        // Pattern{ .timing = "----|x---|----|x---|----|x---|----|x-xx", .name = "sd", .sample = &snare },
-        // Pattern{ .timing = "x--x|--x-|--xx|x---|x--x|--x-|--x-|-x--", .name = "rs", .sample = &rim },
-        // Pattern{ .timing = "----|x---|----|x---|----|x---|----|x-xx", .name = "cp", .sample = &clap },
-        // Pattern{ .timing = "xxxx|xxxx|xxxx|xxxx|xxxx|xxxx|xxxx|xxxx", .name = "ch", .sample = &hihat_closed },
-
-        // ✅ Hangin' on a String - Loose Ends - 32 beats - 105bpm
-        // Pattern{ .timing = "x---|--x-|x---|----|x---|--x-|x---|----", .name = "bd", .sample = &kick },
-        // Pattern{ .timing = "----|x---|----|x---|----|x---|----|x---", .name = "sd", .sample = &snare },
-        // Pattern{ .timing = "---x|----|----|x---|----|----|----|----", .name = "rs", .sample = &rim },
-        // Pattern{ .timing = "----|x---|----|x---|----|x---|----|x---", .name = "cp", .sample = &clap },
-        // Pattern{ .timing = "----|----|--xx|xxx-|----|----|----|----", .name = "cb", .volume = 0.25, .sample = &cowbell },
-        // Pattern{ .timing = "x---|----|----|----|----|----|x---|----", .name = "oh", .sample = &hihat_open },
-        // Pattern{ .timing = "---x|x-x-|x--x|x-x-|x--x|x-x-|-x-x|xxx-", .name = "ch", .sample = &hihat_closed },
-
-        // ✅ Fix in the Mix - Prety Tony 32 beats - 129bpm
-        // Pattern{ .timing = "x---|--x-|--x-|-x--|x---|--x-|----|----", .name = "kick", .sample = &kick },
-        // Pattern{ .timing = "----|x---|----|x---|----|x---|----|x---", .name = "snare", .sample = &snare },
-        // Pattern{ .timing = "x-xx|x-xx|x-xx|xxxx|x-xx|x-xx|x-xx|xxxx", .name = "ch", .sample = &hihat_closed },
-
-        // ✅ Egypt Egypt 32 beats - 127 - Close, missing accent programming. How to do?
-        // Pattern{ .timing = "x---|--x-|--x-|-x--|x---|--x-|--x-|--x-", .name = "kick", .sample = &kick },
-        // Pattern{ .timing = "----|x---|----|x---|----|x---|----|x---", .name = "snare", .sample = &snare },
-        // Pattern{ .timing = "x-x-|xxx-|x-xx|-xx-|x-x-|xxx-|x-xx|-xx-", .name = "cowbell", .volume = 1.0, .sample = &cowbell },
-        // Pattern{ .timing = "xxxx|xxxx|xxxx|xxxx|xxxx|xxxx|xxxx|xxxx", .name = "closed_hat", .volume = 0.75, .sample = &hihat_closed },
-
-        // ✅ Part 2 (Egypt Egypt) ChatGPT AI beat attempt
-        Pattern{ .timing = "x---|--x-|x--x|-x--|x---|--x-|--x-|--x-", .name = "kick", .sample = &kick },
-        Pattern{ .timing = "----|x---|----|x---|----|x-x-|----|x---", .name = "snare", .sample = &snare },
-        Pattern{ .timing = "x-x-|xxx-|x-xx|-xx-|x-x-|x-xx|x-x-|-xx-", .name = "cowbell", .volume = 1.0, .sample = &cowbell },
-        Pattern{ .timing = "xxxx|xxxx|xxxx|xxxx|xxxx|xxxx|xxxx|----", .name = "closed_hat", .volume = 0.75, .sample = &hihat_closed },
-
-        // ✅ Jam on It 32 Beats - 116 bpm - PERFECT!
-        // Pattern{ .timing = "x---|---x|-xx-|--x-|xx--|---x|-xx-|x-x-", .name = "kick", .sample = &kick },
-        // Pattern{ .timing = "----|x---|----|x---|----|x---|----|x---", .name = "snare", .sample = &snare },
-        // Pattern{ .timing = "----|x---|----|x---|----|x---|----|x---", .name = "clap", .sample = &clap },
-        // Pattern{ .timing = "xxxx|xxxx|xxxx|xxxx|xxxx|xxxx|xxxx|xxxx", .name = "closed_hat", .volume = 0.75, .sample = &hihat_closed },
-
-        // ✅ Planet Rock 32 beats - 127 bpm - PERFECT!
-        // Pattern{ .timing = "x---|--x-|----|----|x---|--x-|--x-|----", .name = "kick", .volume = 1.0, .sample = &kick },
-        // Pattern{ .timing = "----|x---|----|x---|----|x---|----|x---", .name = "snare", .volume = 1.0, .sample = &snare },
-        // Pattern{ .timing = "----|x---|----|x---|----|x---|----|x---", .name = "clap", .volume = 1.0, .sample = &clap },
-        // Pattern{ .timing = "x-x-|x-xx|-x-x|x-x-|x-x-|x-xx|-x-x|x-x-", .name = "cowbell", .volume = 0.75, .sample = &cowbell },
-        // Pattern{ .timing = "x-xx|x-xx|x-xx|xxxx|x-xx|x-xx|x-xx|xxxx", .name = "closed_hat", .volume = 0.75, .sample = &hihat_closed },
-    };
+    const selectedSeq = &seqJOI;
 
     // Generate the WAV sequence
-    const mixedWave = try generateSequence(&patterns, 30, bpm, allocator); // 30-second drum loop
-
+    const mixedWave = try generateSequence(selectedSeq, LOOP_DURATION, selectedSeq.Bpm, allocator); // 30-second drum loop
     const soundWave = c.LoadSoundFromWave(mixedWave);
+    defer c.UnloadSound(soundWave);
 
     // Write the wav to the filesystem asap.
-    // TODO: free, but mixedWave.data is an ?*anyopaque
-    //defer allocator.free(mixedWave.data);
+    // NOTE: cast back to original slice, in order to free it.
+    const ptr: [*]i16 = @alignCast(@ptrCast(mixedWave.data));
+    defer allocator.free(ptr[0..totalSamples]);
     if (!c.ExportWave(mixedWave, "drum_sequence.wav")) {
         std.debug.print("Failed to dump .wav file!\n", .{});
     }
 
-    defer c.UnloadSound(soundWave);
+    std.debug.print("\nPlaying: {s} - {s} @ {d} BPM\n", .{
+        selectedSeq.Song,
+        selectedSeq.Artist,
+        selectedSeq.Bpm,
+    });
     c.PlaySound(soundWave);
 
     // This sleeps the main thread...but it's ok because audio is played in a different thread.
-    std.Thread.sleep(std.time.ns_per_s * 31);
+    std.Thread.sleep(std.time.ns_per_s * (LOOP_DURATION + 1));
     std.debug.print("Sound finished playing.\n", .{});
 }
 
@@ -196,7 +252,7 @@ fn trimWaveEnd(buffer: []i16, total_samples: usize, silence_threshold: i16) void
 }
 
 fn generateSequence(
-    patterns: []const Pattern,
+    seq: *const Sequence,
     comptime duration: u32,
     comptime bpm: u32,
     allocator: std.mem.Allocator,
@@ -204,32 +260,32 @@ fn generateSequence(
     const beats_per_second = @as(f32, @floatFromInt(bpm)) / 60.0;
     const total_beats = beats_per_second * @as(f32, @floatFromInt(duration));
     const beat_samples = (SAMPLE_RATE * 60) / bpm;
-    const total_samples = @as(usize, @intFromFloat(total_beats * @as(f32, beat_samples)));
+    totalSamples = @as(usize, @intFromFloat(total_beats * @as(f32, beat_samples)));
 
     //var buffer: [total_samples]i16 = [_]i16{0} ** total_samples;
-    const buffer = try allocator.alloc(i16, total_samples);
+    const buffer = try allocator.alloc(i16, totalSamples);
     @memset(buffer, 0);
 
     // Step duration in samples (16th-note resolution)
     const step_samples = @as(usize, @intFromFloat(@as(f32, @floatFromInt(beat_samples)) / 4.0));
 
-    for (patterns) |*p| {
+    for (seq.TrackLayers) |*t| {
         // TODO: fix this shit!
         // WARNING: Hardcoded bullshit
         // For a 32 beat pattern, 7 visual separators show up and should not be a part of this
         // calculation. For 16 beats this number will be: 3
-        const pTimingLen = p.timing.len - 7;
+        const pTimingLen = t.timing.len - 7;
 
         const pattern_length_samples = pTimingLen * step_samples; // Exact length of one full pattern in samples
         var step: usize = 0;
         var timingIndex: usize = 0;
 
-        while (timingIndex < p.timing.len) : (timingIndex += 1) {
-            if (p.timing[timingIndex] == '|') {
+        while (timingIndex < t.timing.len) : (timingIndex += 1) {
+            if (t.timing[timingIndex] == '|') {
                 continue; // Ignore visual separator
             }
 
-            if (p.timing[timingIndex] == 'x') {
+            if (t.timing[timingIndex] == 'x') {
                 var start_sample: usize = (step % pTimingLen) * step_samples; //step * step_samples;
                 // std.debug.print("name => {s}, step => {d}, p.timing.len => {d}, step_samples => {d}, start_sample => {d}\n", .{
                 //     p.name,
@@ -242,7 +298,7 @@ fn generateSequence(
                 // Loop pattern continuously across the full buffer
                 while (start_sample < buffer.len) : (start_sample += pattern_length_samples) {
                     if (start_sample + step_samples <= buffer.len) {
-                        mixWave(buffer, p.sample, start_sample, p.volume);
+                        mixWave(buffer, t.sample, start_sample, t.volume);
                     }
                 }
             }
@@ -253,13 +309,13 @@ fn generateSequence(
     // These two lines are not working yet...
     // Still hearing artifcats at the end of the sound effect.
     applyFadeOut(buffer, 150); // Smooth fade-out over last 150ms
-    trimWaveEnd(buffer, total_samples, 10); // Remove low-level noise
+    trimWaveEnd(buffer, totalSamples, 10); // Remove low-level noise
 
     return c.Wave{
         .sampleRate = SAMPLE_RATE,
         .sampleSize = BIT_DEPTH,
         .channels = CHANNELS,
-        .frameCount = total_samples,
+        .frameCount = @intCast(totalSamples),
         .data = buffer.ptr,
     };
 }
