@@ -3,3 +3,4 @@
 zig-out
 data/*.png
 drum_sequence.wav
+*.wav

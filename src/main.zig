@@ -119,6 +119,10 @@ pub fn main() !void {
         }
     };
 
+    // Just some crap testing code.
+    // const mPtr: *u8 = null;
+    // std.debug.print("hi {*}\n", .{mPtr});
+
     try mixer.genWav(alloc);
     std.process.exit(0);
 

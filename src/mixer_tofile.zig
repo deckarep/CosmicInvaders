@@ -19,7 +19,7 @@ const Track = struct {
     timing: []const u8, // "x---|x---|x---|x-x-"
     name: []const u8, // The instrument name (e.g., "kick")
     volume: f32 = 1.0, // Volume multiplier, 1.0 is default when unspecified.
-    sample: *c.Wave, // Loaded WAV file
+    sample: ?*c.Wave, // Loaded WAV file
 };
 
 const Sequence = struct {
@@ -90,8 +90,12 @@ const seqEE = Sequence{
     .TrackLayers = &.{
         Track{ .timing = "x---|--x-|--x-|-x--|x---|--x-|--x-|--x-", .name = "kick", .sample = &kick },
         Track{ .timing = "----|x---|----|x---|----|x---|----|x---", .name = "snare", .sample = &snare },
-        Track{ .timing = "x-x-|xxx-|x-xx|-xx-|x-x-|xxx-|x-xx|-xx-", .name = "cowbell", .volume = 1.0, .sample = &cowbell },
+        Track{ .timing = "x-x-|xxx-|x-xx|-xx-|x-x-|xxx-|x-xx|-xx-", .name = "cowbell", .volume = 0.55, .sample = &cowbell },
         Track{ .timing = "xxxx|xxxx|xxxx|xxxx|xxxx|xxxx|xxxx|xxxx", .name = "closed_hat", .volume = 0.75, .sample = &hihat_closed },
+        // Accent track, applies to all instruments, and is really just an alternative volume modifier in the range of: 1.0 - 2.0
+        // BUG: Currently too high of a .volume will crash with integer overflow so I need to fix that at some point.
+        // NOTE: Though subtle, it makes a difference and gives more character to the sequence as a whole.
+        Track{ .timing = "x-xx|x-xx|x-xx|xxxx|x-xx|x-xx|x-xx|x-xx", .name = "accent", .volume = 1.25, .sample = null },
     },
 };
 
@@ -108,6 +112,16 @@ const seqJOI = Sequence{
         Track{ .timing = "----|x---|----|x---|----|x---|----|x---", .name = "snare", .sample = &snare },
         Track{ .timing = "----|x---|----|x---|----|x---|----|x---", .name = "clap", .sample = &clap },
         Track{ .timing = "xxxx|xxxx|xxxx|xxxx|xxxx|xxxx|xxxx|xxxx", .name = "closed_hat", .volume = 0.75, .sample = &hihat_closed },
+
+        // Track{ .timing = "x---|--x-|x-xx|--x-|xx-x|---x|-x-x|x-x-", .name = "kick", .sample = &kick },
+        // Track{ .timing = "----|x--x|----|x---|----|x--x|----|x---", .name = "snare", .sample = &snare },
+        // Track{ .timing = "----|x---|--x-|x---|----|x-x-|----|x---", .name = "clap", .sample = &clap },
+        // Track{ .timing = "xxxx|xxxx|xxx-|xxxx|xxxx|xxxx|xxxx|----", .name = "closed_hat", .volume = 0.75, .sample = &hihat_closed },
+
+        // Track{ .timing = "x---|--x-|--x-|x---|x---|--x-|x--x|--x-", .name = "kick", .sample = &kick },
+        // Track{ .timing = "----|x---|--x-|x---|----|x-x-|----|x---", .name = "snare", .sample = &snare },
+        // Track{ .timing = "----|x---|x--x|x---|----|x---|x--x|----", .name = "clap", .sample = &clap },
+        // Track{ .timing = "xxxx|xxxx|xx-x|xxxx|xxxx|xx-x|xxxx|xxxx", .name = "closed_hat", .volume = 0.75, .sample = &hihat_closed },
     },
 };
 
@@ -183,10 +197,15 @@ pub fn genWav(allocator: std.mem.Allocator) !void {
     // Pattern{ .timing = "x___|x___|x___|x___|x___|x___|x___|x___|x___|x___|x___|x___|x___|x___|x___|x___", .name = "bass drum", .volume = 0.5, .sample = &kick },
     // Pattern{ .timing = "____|x___|____|x___|____|x___|____|x___|____|x___|____|x___|____|x___|____|x___", .name = "clap", .volume = 0.5, .sample = &clap },
 
-    const selectedSeq = &seqJOI;
+    const selectedSeq = &seqEE;
 
     // Generate the WAV sequence
-    const mixedWave = try generateSequence(selectedSeq, LOOP_DURATION, selectedSeq.Bpm, allocator); // 30-second drum loop
+    const mixedWave = try generateSequence(
+        selectedSeq,
+        LOOP_DURATION,
+        selectedSeq.Bpm,
+        allocator,
+    );
     const soundWave = c.LoadSoundFromWave(mixedWave);
     defer c.UnloadSound(soundWave);
 
@@ -194,7 +213,7 @@ pub fn genWav(allocator: std.mem.Allocator) !void {
     // NOTE: cast back to original slice, in order to free it.
     const ptr: [*]i16 = @alignCast(@ptrCast(mixedWave.data));
     defer allocator.free(ptr[0..totalSamples]);
-    if (!c.ExportWave(mixedWave, "drum_sequence.wav")) {
+    if (!c.ExportWave(mixedWave, selectedSeq.Song ++ " - " ++ selectedSeq.Artist ++ ".wav")) {
         std.debug.print("Failed to dump .wav file!\n", .{});
     }
 
@@ -203,17 +222,30 @@ pub fn genWav(allocator: std.mem.Allocator) !void {
         selectedSeq.Artist,
         selectedSeq.Bpm,
     });
-    c.PlaySound(soundWave);
+
+    // Notice this is const and not a variable? Yeah, fuck you too.
+
+    const beatsRemainFresh = true;
+    while (beatsRemainFresh) {
+        if (!c.IsSoundPlaying(soundWave)) {
+            c.PlaySound(soundWave);
+        }
+        std.Thread.sleep(std.time.ns_per_ms * 1);
+    }
 
     // This sleeps the main thread...but it's ok because audio is played in a different thread.
-    std.Thread.sleep(std.time.ns_per_s * (LOOP_DURATION + 1));
-    std.debug.print("Sound finished playing.\n", .{});
+    //std.Thread.sleep(std.time.ns_per_s * (LOOP_DURATION + 1));
+    //std.debug.print("Sound finished playing.\n", .{});
 }
 
-fn mixWave(buffer: []i16, wave: *c.Wave, start_sample: usize, volume: f32) void {
+fn mixWave(buffer: []i16, wave: ?*c.Wave, start_sample: usize, volume: f32) void {
+    if (wave == null) {
+        return;
+    }
+
     var sampleIndex: usize = 0;
-    const waveData: [*]i16 = @alignCast(@ptrCast(wave.data));
-    const waveSize = wave.frameCount;
+    const waveData: [*]i16 = @alignCast(@ptrCast(wave.?.data));
+    const waveSize = wave.?.frameCount;
 
     while (sampleIndex < waveSize and (start_sample + sampleIndex) < buffer.len) : (sampleIndex += 1) {
         buffer[start_sample + sampleIndex] +|= @intFromFloat(@as(f32, @floatFromInt(waveData[sampleIndex])) * volume);
@@ -262,21 +294,42 @@ fn generateSequence(
     const beat_samples = (SAMPLE_RATE * 60) / bpm;
     totalSamples = @as(usize, @intFromFloat(total_beats * @as(f32, beat_samples)));
 
-    //var buffer: [total_samples]i16 = [_]i16{0} ** total_samples;
+    // Stack buffer.
+    // var buffer: [total_samples]i16 = [_]i16{0} ** total_samples;
+    // vs.
+    // Heap buffer.
     const buffer = try allocator.alloc(i16, totalSamples);
     @memset(buffer, 0);
+
+    // Check for an accent track
+    // When present, if enabled for a given step affects all instruments at that same step.
+    var accentTrack: ?*const Track = null;
+    for (seq.TrackLayers) |*t| {
+        if (std.mem.eql(u8, t.name, "accent")) {
+            accentTrack = t;
+            break;
+        }
+    }
 
     // Step duration in samples (16th-note resolution)
     const step_samples = @as(usize, @intFromFloat(@as(f32, @floatFromInt(beat_samples)) / 4.0));
 
-    for (seq.TrackLayers) |*t| {
-        // TODO: fix this shit!
-        // WARNING: Hardcoded bullshit
-        // For a 32 beat pattern, 7 visual separators show up and should not be a part of this
-        // calculation. For 16 beats this number will be: 3
-        const pTimingLen = t.timing.len - 7;
+    // TODO: fix this shit!
+    // WARNING: Hardcoded bullshit
+    // For a 32 beat pattern, 7 visual separators show up and should not be a part of this
+    // calculation. For 16 beats this number will be: 3
 
-        const pattern_length_samples = pTimingLen * step_samples; // Exact length of one full pattern in samples
+    // NOTE: I'm inspecting the 0th layer because all layers should be the same length anyway.
+    // at least for the current design.
+    const tTimingLen = seq.TrackLayers[0].timing.len - 7;
+    const track_length_samples = tTimingLen * step_samples; // Exact length of one full pattern in samples
+
+    for (seq.TrackLayers) |*t| {
+        // const tTimingLen = t.timing.len - 7;
+        // const track_length_samples = tTimingLen * step_samples; // Exact length of one full pattern in samples
+
+        var vol = t.volume;
+
         var step: usize = 0;
         var timingIndex: usize = 0;
 
@@ -286,19 +339,21 @@ fn generateSequence(
             }
 
             if (t.timing[timingIndex] == 'x') {
-                var start_sample: usize = (step % pTimingLen) * step_samples; //step * step_samples;
-                // std.debug.print("name => {s}, step => {d}, p.timing.len => {d}, step_samples => {d}, start_sample => {d}\n", .{
-                //     p.name,
-                //     step + 1,
-                //     p.timing.len,
-                //     step_samples,
-                //     start_sample,
-                // });
+                var start_sample: usize = (step % tTimingLen) * step_samples;
+
+                // Check for accent modifier
+                if (accentTrack) |at| {
+                    if (at.timing[timingIndex] == 'x') {
+                        vol = at.volume;
+                    } else {
+                        vol = t.volume;
+                    }
+                }
 
                 // Loop pattern continuously across the full buffer
-                while (start_sample < buffer.len) : (start_sample += pattern_length_samples) {
+                while (start_sample < buffer.len) : (start_sample += track_length_samples) {
                     if (start_sample + step_samples <= buffer.len) {
-                        mixWave(buffer, t.sample, start_sample, t.volume);
+                        mixWave(buffer, t.sample, start_sample, vol);
                     }
                 }
             }
@@ -306,8 +361,8 @@ fn generateSequence(
         }
     }
 
-    // These two lines are not working yet...
-    // Still hearing artifcats at the end of the sound effect.
+    // These two lines are untested in terms of if they're actually doing anything useful or not.
+    // TODO: A closer look is needed here.
     applyFadeOut(buffer, 150); // Smooth fade-out over last 150ms
     trimWaveEnd(buffer, totalSamples, 10); // Remove low-level noise
 
@@ -315,7 +370,9 @@ fn generateSequence(
         .sampleRate = SAMPLE_RATE,
         .sampleSize = BIT_DEPTH,
         .channels = CHANNELS,
-        .frameCount = @intCast(totalSamples),
+        // NOTE: I'm just generating a single loop now,
+        // Use totalSamples to generate the entire requested duration.
+        .frameCount = @intCast(track_length_samples), //@intCast(totalSamples),
         .data = buffer.ptr,
     };
 }
