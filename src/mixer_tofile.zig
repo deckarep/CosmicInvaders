@@ -6,14 +6,12 @@ const c = @import("cdefs.zig").c;
 // Question: How much of this can be done at comptime?
 // Can we take a text pattern => in-memory mixed waveform all at comptime?
 // We could if our samples were not loaded as files but embeded binary data.
-
+const SAMPLE_FLDR = "data/drum_samples/";
 const LOOP_DURATION = 30;
 const SAMPLE_RATE = 44100; // Standard audio sample rate
 const BUFFER_SIZE = 44100; // 1 second of audio data (44100 samples)
 const CHANNELS = 1; // Mono audio
 const BIT_DEPTH = 16; // 16-bit audio
-
-var totalSamples: usize = 0;
 
 const Track = struct {
     timing: []const u8, // "x---|x---|x---|x-x-"
@@ -30,6 +28,7 @@ const Sequence = struct {
     TrackLayers: []const Track,
 };
 
+// 808 set hardcoded.
 var kick: c.Wave = undefined;
 var snare: c.Wave = undefined;
 var hihat_open: c.Wave = undefined;
@@ -39,6 +38,68 @@ var cowbell: c.Wave = undefined;
 var tomhi: c.Wave = undefined;
 var tomlow: c.Wave = undefined;
 var rim: c.Wave = undefined;
+
+// Linn set hardcoded.
+var linn_chhs: c.Wave = undefined;
+var linn_chhl: c.Wave = undefined;
+var linn_chh: c.Wave = undefined;
+var linn_cgh: c.Wave = undefined;
+var linn_cgl: c.Wave = undefined;
+var linn_cb: c.Wave = undefined;
+var linn_cl: c.Wave = undefined;
+var linn_sd: c.Wave = undefined;
+var linn_sdl: c.Wave = undefined;
+var linn_kick: c.Wave = undefined;
+
+// TODO:
+// Computer Power - Jamie Jupitor (Egyptian Lover actually)
+
+// Thriller - Michael Jackson 16 beats - 138
+// Gross, this is wrong...doesn't sound right.
+const seqTH = Sequence{
+    .Song = "Thriller",
+    .Artist = "Michael Jackson",
+    .Bpm = 118,
+    .TrackLayers = &.{
+        Track{ .timing = "x-x-|x-xx|x-x-|x-x-|x-x-|x-xx|x-x-|x-x-", .name = "hi-hat", .volume = 0.25, .sample = &linn_chh },
+        Track{ .timing = "----|----|---x|---x|----|----|---x|---x", .name = "hi-hat-long", .volume = 0.25, .sample = &linn_chhl },
+        Track{ .timing = "---x|--x-|----|----|---x|--x-|----|----", .name = "conga-high", .volume = 0.25, .sample = &linn_cgh },
+        Track{ .timing = "----|x---|x--x|--x-|----|x---|x--x|--x-", .name = "conga-low", .volume = 0.25, .sample = &linn_cgl },
+        Track{ .timing = "---x|---x|----|----|---x|---x|----|----", .name = "cowbell", .volume = 0.50, .sample = &linn_cb },
+        Track{ .timing = "----|----|----|x---|----|----|----|x---", .name = "clap", .volume = 0.5, .sample = &linn_cl },
+        Track{ .timing = "----|x---|----|x---|----|x---|----|x---", .name = "snare", .sample = &linn_sd },
+        Track{ .timing = "x---|x---|x---|x---|x---|x---|x---|x---", .name = "kick", .sample = &linn_kick },
+    },
+};
+
+// ✅ Burning up - Madonna - 16 beats - 138 bpm
+const seqBU = Sequence{
+    .Song = "Burning Up",
+    .Artist = "Madonna",
+    .Bpm = 138,
+    .TrackLayers = &.{
+        // NOTE: converted to 32 steps even though it's just duplicated.
+        Track{ .timing = "x-x-|x-x-|x-x-|x-x-|x-x-|x-x-|x-x-|x-x-", .name = "hi-hat-short", .volume = 0.25, .sample = &linn_chhs },
+        Track{ .timing = "----|----|----|---x|----|----|----|---x", .name = "hi-hat", .volume = 0.1, .sample = &linn_chh },
+        Track{ .timing = "----|x-x-|----|x---|----|x-x-|----|x---", .name = "clap", .volume = 0.5, .sample = &linn_cl },
+        Track{ .timing = "----|x-x-|----|x---|----|x-x-|----|x---", .name = "snare-low", .sample = &linn_sdl },
+        Track{ .timing = "x---|x---|x---|x-x-|x---|x---|x---|x-x-", .name = "kick", .sample = &linn_kick },
+    },
+};
+
+// ✅ Clear - Cybotron - 32 beats - 125bpm
+const seqCL = Sequence{
+    .Song = "Clear",
+    .Artist = "Cybotron",
+    .Bpm = 125,
+    .TrackLayers = &.{
+        Track{ .timing = "x--x|--x-|--x-|----|x---|--x-|--x-|x---", .name = "bd", .sample = &kick },
+        Track{ .timing = "----|x---|----|x---|----|x---|----|x---", .name = "snare", .sample = &snare },
+        Track{ .timing = "----|x---|----|x---|----|x---|----|x---", .name = "clap", .sample = &clap },
+        Track{ .timing = "----|x---|----|x---|----|x---|----|x---", .name = "oh", .sample = &hihat_open },
+        Track{ .timing = "xxxx|----|xxxx|----|xxxx|----|xxxx|----", .name = "ch", .sample = &hihat_closed },
+    },
+};
 
 // ✅ 19 - Paul Hardcastle - 32 beats - 118bpm
 const seq19 = Sequence{
@@ -139,21 +200,34 @@ const seqPR = Sequence{
     },
 };
 
+// Test: no mans land...can we do a comptime c.Wave?
+// Not without some magic, Raylib uses the heap when setting up a Wave (even from memory)
+// const playComptimeWaveInstead = true;
+// const tempGlobalBufSize = 1024 * 1024;
+// var tempGlobalBuf: [tempGlobalBufSize]i16 = undefined;
+// const loopA = generateSequence(
+//     &seqPR,
+//     LOOP_DURATION,
+//     seqPR.Bpm,
+//     &tempGlobalBuf,
+//     tempGlobalBufSize,
+// );
+
 pub fn genWav(allocator: std.mem.Allocator) !void {
     c.InitAudioDevice(); // Needed for `LoadWave()`
 
-    // Load drum samples
-    kick = c.LoadWave("data/drum_samples/bass-drum.wav");
-    snare = c.LoadWave("data/drum_samples/snare.wav");
-    hihat_closed = c.LoadWave("data/drum_samples/hihat-closed.wav");
-    hihat_open = c.LoadWave("data/drum_samples/hihat-open.wav");
-    clap = c.LoadWave("data/drum_samples/clap.wav");
-    cowbell = c.LoadWave("data/drum_samples/cowbell.wav");
-    tomhi = c.LoadWave("data/drum_samples/tom-hi.wav");
-    tomlow = c.LoadWave("data/drum_samples/tom-low.wav");
-    rim = c.LoadWave("data/drum_samples/rim-shot.wav");
+    // Load 808 drum samples
+    kick = c.LoadWave(SAMPLE_FLDR ++ "808/bass-drum.wav");
+    snare = c.LoadWave(SAMPLE_FLDR ++ "808/snare.wav");
+    hihat_closed = c.LoadWave(SAMPLE_FLDR ++ "808/hihat-closed.wav");
+    hihat_open = c.LoadWave(SAMPLE_FLDR ++ "808/hihat-open.wav");
+    clap = c.LoadWave(SAMPLE_FLDR ++ "808/clap.wav");
+    cowbell = c.LoadWave(SAMPLE_FLDR ++ "808/cowbell.wav");
+    tomhi = c.LoadWave(SAMPLE_FLDR ++ "808/tom-hi.wav");
+    tomlow = c.LoadWave(SAMPLE_FLDR ++ "808/tom-low.wav");
+    rim = c.LoadWave(SAMPLE_FLDR ++ "808/rim-shot.wav");
 
-    // Clean up memory
+    // Unload 808
     defer c.UnloadWave(kick);
     defer c.UnloadWave(snare);
     defer c.UnloadWave(hihat_open);
@@ -164,55 +238,52 @@ pub fn genWav(allocator: std.mem.Allocator) !void {
     defer c.UnloadWave(tomlow);
     defer c.UnloadWave(rim);
 
-    //const bpm: u32 = 138; //Madonna Burning Up
-    //const bpm: u32 = 118; // Thriller
-    //const bpm: u32 = 127; // Testing
+    // Load Linn drum samples
+    linn_chhs = c.LoadWave(SAMPLE_FLDR ++ "linn/chhs.wav");
+    linn_chhl = c.LoadWave(SAMPLE_FLDR ++ "linn/chhl.wav");
+    linn_chh = c.LoadWave(SAMPLE_FLDR ++ "linn/chh.wav");
+    linn_cgh = c.LoadWave(SAMPLE_FLDR ++ "linn/congah.wav");
+    linn_cgl = c.LoadWave(SAMPLE_FLDR ++ "linn/congal.wav");
+    linn_cb = c.LoadWave(SAMPLE_FLDR ++ "linn/cowb.wav");
+    linn_cl = c.LoadWave(SAMPLE_FLDR ++ "linn/clap.wav");
+    linn_sdl = c.LoadWave(SAMPLE_FLDR ++ "linn/sdl.wav");
+    linn_sd = c.LoadWave(SAMPLE_FLDR ++ "linn/sd.wav");
+    linn_kick = c.LoadWave(SAMPLE_FLDR ++ "linn/kick.wav");
 
-    // Define the beat pattern
-    // const patterns = [_]Pattern{
-    // Thriller - 118 bpm
-    // Pattern{ .timing = "x-x-|x-xx|x-x-|x-x-", .name = "hi-hat", .volume = 1.0, .sample = &hihat_closed },
-    // Pattern{ .timing = "----|----|---x|---x", .name = "hi-hat-long", .volume = 1.0, .sample = &hihat_open },
-    // Pattern{ .timing = "---x|--x-|----|----", .name = "conga-high", .volume = 1.0, .sample = &tomhi },
-    // Pattern{ .timing = "----|x---|x--x|--x-", .name = "conga-low", .volume = 1.0, .sample = &tomlow },
-    // Pattern{ .timing = "---x|---x|----|----", .name = "cowbell", .volume = 1.0, .sample = &cowbell },
-    // Pattern{ .timing = "----|----|----|x---", .name = "clap", .volume = 1.0, .sample = &clap },
-    // Pattern{ .timing = "----|x---|----|x---", .name = "snare", .volume = 1.0, .sample = &snare },
-    // Pattern{ .timing = "x---|x---|x---|x---", .name = "kick", .volume = 1.0, .sample = &kick },
-    // Pattern{ .timing = "x-x-|x-x-|x-x-|x-x-|x-x-|x-x-|x-x-|x-x-", .name = "hi-hat-short", .volume = 1.0, .sample = &hihat_closed },
-    // Pattern{ .timing = "----|----|----|---x|----|----|----|---x", .name = "hi-hat", .volume = 1.0, .sample = &hihat_open },
-    // Pattern{ .timing = "----|x-x-|----|x---|----|x-x-|----|x---", .name = "clap", .volume = 1.0, .sample = &clap },
-    // Pattern{ .timing = "----|x-x-|----|x---|----|x-x-|----|x---", .name = "snare-low", .volume = 1.0, .sample = &snare },
-    // Pattern{ .timing = "x---|x---|x---|x-x-|x---|x---|x---|x-x-", .name = "kick", .volume = 1.0, .sample = &kick },
-
-    // Burning up - Madonna
-    // Pattern{ .timing = "x-x-|x-x-|x-x-|x-x-", .name = "hi-hat-short", .volume = 1.0, .sample = &hihat_closed },
-    // Pattern{ .timing = "----|----|----|---x", .name = "hi-hat", .volume = 1.0, .sample = &hihat_open },
-    // Pattern{ .timing = "----|x-x-|----|x---", .name = "clap", .volume = 1.0, .sample = &clap },
-    // Pattern{ .timing = "----|x-x-|----|x---", .name = "snare-low", .volume = 1.0, .sample = &snare },
-    // Pattern{ .timing = "x---|x---|x---|x-x-", .name = "kick", .volume = 1.0, .sample = &kick },
+    defer c.UnloadWave(linn_chhs);
+    defer c.UnloadWave(linn_chhl);
+    defer c.UnloadWave(linn_chh);
+    defer c.UnloadWave(linn_cgl);
+    defer c.UnloadWave(linn_cgh);
+    defer c.UnloadWave(linn_cl);
+    defer c.UnloadWave(linn_cb);
+    defer c.UnloadWave(linn_sdl);
+    defer c.UnloadWave(linn_sd);
+    defer c.UnloadWave(linn_kick);
 
     // Test Sound: Sounds accurate to me so far:
     // Pattern{ .timing = "xxxx|xxxx|xxxx|xxxx|xxxx|xxxx|xxxx|xxxx|xxxx|xxxx|xxxx|xxxx|xxxx|xxxx|xxxx|xxxx", .name = "tick", .volume = 0.5, .sample = &hihat_closed },
     // Pattern{ .timing = "x___|x___|x___|x___|x___|x___|x___|x___|x___|x___|x___|x___|x___|x___|x___|x___", .name = "bass drum", .volume = 0.5, .sample = &kick },
     // Pattern{ .timing = "____|x___|____|x___|____|x___|____|x___|____|x___|____|x___|____|x___|____|x___", .name = "clap", .volume = 0.5, .sample = &clap },
 
-    const selectedSeq = &seqEE;
+    const selectedSeq = &seqFITM;
 
     // Generate the WAV sequence
-    const mixedWave = try generateSequence(
+    const totalSamples = calcTotalSamples(selectedSeq.Bpm, LOOP_DURATION);
+    const writeBuffer = try allocator.alloc(i16, totalSamples);
+    defer allocator.free(writeBuffer);
+
+    const mixedWave = generateSequence(
         selectedSeq,
         LOOP_DURATION,
         selectedSeq.Bpm,
-        allocator,
+        writeBuffer,
+        totalSamples,
     );
     const soundWave = c.LoadSoundFromWave(mixedWave);
     defer c.UnloadSound(soundWave);
 
     // Write the wav to the filesystem asap.
-    // NOTE: cast back to original slice, in order to free it.
-    const ptr: [*]i16 = @alignCast(@ptrCast(mixedWave.data));
-    defer allocator.free(ptr[0..totalSamples]);
     if (!c.ExportWave(mixedWave, selectedSeq.Song ++ " - " ++ selectedSeq.Artist ++ ".wav")) {
         std.debug.print("Failed to dump .wav file!\n", .{});
     }
@@ -223,8 +294,12 @@ pub fn genWav(allocator: std.mem.Allocator) !void {
         selectedSeq.Bpm,
     });
 
-    // Notice this is const and not a variable? Yeah, fuck you too.
+    // if (playComptimeWaveInstead) {
+    //     soundWave = loopA;
+    // }
 
+    // NOTE: Audio plays async, while loop is all good.
+    // Notice this is const and not a variable? Yeah, fuck you too.
     const beatsRemainFresh = true;
     while (beatsRemainFresh) {
         if (!c.IsSoundPlaying(soundWave)) {
@@ -283,23 +358,33 @@ fn trimWaveEnd(buffer: []i16, total_samples: usize, silence_threshold: i16) void
     }
 }
 
-fn generateSequence(
-    seq: *const Sequence,
-    comptime duration: u32,
-    comptime bpm: u32,
-    allocator: std.mem.Allocator,
-) !c.Wave {
+fn calcTotalSamples(bpm: u32, duration: comptime_int) usize {
     const beats_per_second = @as(f32, @floatFromInt(bpm)) / 60.0;
     const total_beats = beats_per_second * @as(f32, @floatFromInt(duration));
-    const beat_samples = (SAMPLE_RATE * 60) / bpm;
-    totalSamples = @as(usize, @intFromFloat(total_beats * @as(f32, beat_samples)));
+    const beat_samples: f32 = (SAMPLE_RATE * 60) / @as(f32, @floatFromInt(bpm));
+    const totalSamples = @as(usize, @intFromFloat(total_beats * beat_samples));
+    return totalSamples;
+}
 
-    // Stack buffer.
-    // var buffer: [total_samples]i16 = [_]i16{0} ** total_samples;
-    // vs.
-    // Heap buffer.
-    const buffer = try allocator.alloc(i16, totalSamples);
-    @memset(buffer, 0);
+fn generateSequence(
+    seq: *const Sequence,
+    duration: u32,
+    bpm: u32,
+    writeBuffer: []i16,
+    writeBufferSize: usize,
+) c.Wave {
+    // WARNING: This is duplicate code from calcTotalSamples func...but I need the other vars.
+    const beats_per_second = @as(f32, @floatFromInt(bpm)) / 60.0;
+    const total_beats = beats_per_second * @as(f32, @floatFromInt(duration));
+    const beat_samples: f32 = (SAMPLE_RATE * 60) / @as(f32, @floatFromInt(bpm));
+    const totalSamples = @as(usize, @intFromFloat(total_beats * beat_samples));
+
+    // Technically don't need this but was trying to pull off some comptime bullshit that
+    // will need more work.
+    _ = writeBufferSize;
+
+    // Artifacts show up when memory isn't zeroed so fucken zero it.
+    @memset(writeBuffer, 0);
 
     // Check for an accent track
     // When present, if enabled for a given step affects all instruments at that same step.
@@ -312,7 +397,7 @@ fn generateSequence(
     }
 
     // Step duration in samples (16th-note resolution)
-    const step_samples = @as(usize, @intFromFloat(@as(f32, @floatFromInt(beat_samples)) / 4.0));
+    const step_samples = @as(usize, @intFromFloat(beat_samples / 4.0));
 
     // TODO: fix this shit!
     // WARNING: Hardcoded bullshit
@@ -325,9 +410,6 @@ fn generateSequence(
     const track_length_samples = tTimingLen * step_samples; // Exact length of one full pattern in samples
 
     for (seq.TrackLayers) |*t| {
-        // const tTimingLen = t.timing.len - 7;
-        // const track_length_samples = tTimingLen * step_samples; // Exact length of one full pattern in samples
-
         var vol = t.volume;
 
         var step: usize = 0;
@@ -351,9 +433,9 @@ fn generateSequence(
                 }
 
                 // Loop pattern continuously across the full buffer
-                while (start_sample < buffer.len) : (start_sample += track_length_samples) {
-                    if (start_sample + step_samples <= buffer.len) {
-                        mixWave(buffer, t.sample, start_sample, vol);
+                while (start_sample < writeBuffer.len) : (start_sample += track_length_samples) {
+                    if (start_sample + step_samples <= writeBuffer.len) {
+                        mixWave(writeBuffer, t.sample, start_sample, vol);
                     }
                 }
             }
@@ -363,8 +445,8 @@ fn generateSequence(
 
     // These two lines are untested in terms of if they're actually doing anything useful or not.
     // TODO: A closer look is needed here.
-    applyFadeOut(buffer, 150); // Smooth fade-out over last 150ms
-    trimWaveEnd(buffer, totalSamples, 10); // Remove low-level noise
+    applyFadeOut(writeBuffer, 150); // Smooth fade-out over last 150ms
+    trimWaveEnd(writeBuffer, totalSamples, 10); // Remove low-level noise
 
     return c.Wave{
         .sampleRate = SAMPLE_RATE,
@@ -373,6 +455,6 @@ fn generateSequence(
         // NOTE: I'm just generating a single loop now,
         // Use totalSamples to generate the entire requested duration.
         .frameCount = @intCast(track_length_samples), //@intCast(totalSamples),
-        .data = buffer.ptr,
+        .data = writeBuffer.ptr,
     };
 }
