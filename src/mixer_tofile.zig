@@ -72,11 +72,11 @@ const seqTH = Sequence{
     },
 };
 
-// ✅ Burning up - Madonna - 16 beats - 138 bpm
+// ✅ Burning up - Madonna - 16 beats - 139 bpm
 const seqBU = Sequence{
     .Song = "Burning Up",
     .Artist = "Madonna",
-    .Bpm = 138,
+    .Bpm = 139,
     .TrackLayers = &.{
         // NOTE: converted to 32 steps even though it's just duplicated.
         Track{ .timing = "x-x-|x-x-|x-x-|x-x-|x-x-|x-x-|x-x-|x-x-", .name = "hi-hat-short", .volume = 0.25, .sample = &linn_chhs },
@@ -213,9 +213,7 @@ const seqPR = Sequence{
 //     tempGlobalBufSize,
 // );
 
-pub fn genWav(allocator: std.mem.Allocator) !void {
-    c.InitAudioDevice(); // Needed for `LoadWave()`
-
+fn loadSamples() void {
     // Load 808 drum samples
     kick = c.LoadWave(SAMPLE_FLDR ++ "808/bass-drum.wav");
     snare = c.LoadWave(SAMPLE_FLDR ++ "808/snare.wav");
@@ -226,17 +224,6 @@ pub fn genWav(allocator: std.mem.Allocator) !void {
     tomhi = c.LoadWave(SAMPLE_FLDR ++ "808/tom-hi.wav");
     tomlow = c.LoadWave(SAMPLE_FLDR ++ "808/tom-low.wav");
     rim = c.LoadWave(SAMPLE_FLDR ++ "808/rim-shot.wav");
-
-    // Unload 808
-    defer c.UnloadWave(kick);
-    defer c.UnloadWave(snare);
-    defer c.UnloadWave(hihat_open);
-    defer c.UnloadWave(hihat_closed);
-    defer c.UnloadWave(clap);
-    defer c.UnloadWave(cowbell);
-    defer c.UnloadWave(tomhi);
-    defer c.UnloadWave(tomlow);
-    defer c.UnloadWave(rim);
 
     // Load Linn drum samples
     linn_chhs = c.LoadWave(SAMPLE_FLDR ++ "linn/chhs.wav");
@@ -249,7 +236,21 @@ pub fn genWav(allocator: std.mem.Allocator) !void {
     linn_sdl = c.LoadWave(SAMPLE_FLDR ++ "linn/sdl.wav");
     linn_sd = c.LoadWave(SAMPLE_FLDR ++ "linn/sd.wav");
     linn_kick = c.LoadWave(SAMPLE_FLDR ++ "linn/kick.wav");
+}
 
+fn unloadSamples() void {
+    // Unload 808
+    defer c.UnloadWave(kick);
+    defer c.UnloadWave(snare);
+    defer c.UnloadWave(hihat_open);
+    defer c.UnloadWave(hihat_closed);
+    defer c.UnloadWave(clap);
+    defer c.UnloadWave(cowbell);
+    defer c.UnloadWave(tomhi);
+    defer c.UnloadWave(tomlow);
+    defer c.UnloadWave(rim);
+
+    // Unload Linn
     defer c.UnloadWave(linn_chhs);
     defer c.UnloadWave(linn_chhl);
     defer c.UnloadWave(linn_chh);
@@ -260,19 +261,40 @@ pub fn genWav(allocator: std.mem.Allocator) !void {
     defer c.UnloadWave(linn_sdl);
     defer c.UnloadWave(linn_sd);
     defer c.UnloadWave(linn_kick);
+}
+
+inline fn startTime() !std.time.Instant {
+    const s = try std.time.Instant.now();
+    return s;
+}
+
+inline fn endTimePrint(name: []const u8, start: std.time.Instant) !void {
+    const endTime = try std.time.Instant.now();
+    const elapsed = endTime.since(start);
+    const elapsed_ms = elapsed / 1_000_000; // Convert to milliseconds
+    std.debug.print("{s} elapsed => {d}ms\n", .{ name, elapsed_ms });
+}
+
+pub fn genWav(allocator: std.mem.Allocator) !void {
+    c.InitAudioDevice(); // Needed for `LoadWave()`
+
+    loadSamples();
+    defer unloadSamples();
 
     // Test Sound: Sounds accurate to me so far:
     // Pattern{ .timing = "xxxx|xxxx|xxxx|xxxx|xxxx|xxxx|xxxx|xxxx|xxxx|xxxx|xxxx|xxxx|xxxx|xxxx|xxxx|xxxx", .name = "tick", .volume = 0.5, .sample = &hihat_closed },
     // Pattern{ .timing = "x___|x___|x___|x___|x___|x___|x___|x___|x___|x___|x___|x___|x___|x___|x___|x___", .name = "bass drum", .volume = 0.5, .sample = &kick },
     // Pattern{ .timing = "____|x___|____|x___|____|x___|____|x___|____|x___|____|x___|____|x___|____|x___", .name = "clap", .volume = 0.5, .sample = &clap },
 
-    const selectedSeq = &seqFITM;
+    // Choose your song:
+    const selectedSeq = &seqCL;
 
     // Generate the WAV sequence
     const totalSamples = calcTotalSamples(selectedSeq.Bpm, LOOP_DURATION);
     const writeBuffer = try allocator.alloc(i16, totalSamples);
     defer allocator.free(writeBuffer);
 
+    const s = try startTime();
     const mixedWave = generateSequence(
         selectedSeq,
         LOOP_DURATION,
@@ -281,6 +303,7 @@ pub fn genWav(allocator: std.mem.Allocator) !void {
         totalSamples,
     );
     const soundWave = c.LoadSoundFromWave(mixedWave);
+    try endTimePrint("generateSequence", s);
     defer c.UnloadSound(soundWave);
 
     // Write the wav to the filesystem asap.
@@ -298,6 +321,9 @@ pub fn genWav(allocator: std.mem.Allocator) !void {
     //     soundWave = loopA;
     // }
 
+    // Hacky stuff
+    //c.SetSoundPitch(soundWave, 1.0);
+
     // NOTE: Audio plays async, while loop is all good.
     // Notice this is const and not a variable? Yeah, fuck you too.
     const beatsRemainFresh = true;
@@ -305,6 +331,7 @@ pub fn genWav(allocator: std.mem.Allocator) !void {
         if (!c.IsSoundPlaying(soundWave)) {
             c.PlaySound(soundWave);
         }
+        // Chill the fuck out, CPU.
         std.Thread.sleep(std.time.ns_per_ms * 1);
     }
 
@@ -359,6 +386,7 @@ fn trimWaveEnd(buffer: []i16, total_samples: usize, silence_threshold: i16) void
 }
 
 fn calcTotalSamples(bpm: u32, duration: comptime_int) usize {
+    // WARNING: This is duplicate code from generateSequence func...but I need the other vars.
     const beats_per_second = @as(f32, @floatFromInt(bpm)) / 60.0;
     const total_beats = beats_per_second * @as(f32, @floatFromInt(duration));
     const beat_samples: f32 = (SAMPLE_RATE * 60) / @as(f32, @floatFromInt(bpm));
@@ -380,10 +408,10 @@ fn generateSequence(
     const totalSamples = @as(usize, @intFromFloat(total_beats * beat_samples));
 
     // Technically don't need this but was trying to pull off some comptime bullshit that
-    // will need more work.
+    // will need more work. The writeBuffer slice has a .len obviously baked in.
     _ = writeBufferSize;
 
-    // Artifacts show up when memory isn't zeroed so fucken zero it.
+    // Clean the memory to ensure artifacts don't show up in the final output.
     @memset(writeBuffer, 0);
 
     // Check for an accent track
@@ -439,6 +467,7 @@ fn generateSequence(
                     }
                 }
             }
+
             step += 1; // Only increment step for valid beats
         }
     }
