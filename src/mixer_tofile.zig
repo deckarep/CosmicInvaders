@@ -275,6 +275,34 @@ inline fn endTimePrint(name: []const u8, start: std.time.Instant) !void {
     std.debug.print("{s} elapsed => {d}ms\n", .{ name, elapsed_ms });
 }
 
+pub fn processSequence(seq: *const Sequence, allocator: std.mem.Allocator) !c.Sound {
+    // Generate the WAV sequence
+    const totalSamples = calcTotalSamples(seq.Bpm, LOOP_DURATION);
+    const writeBuffer = try allocator.alloc(i16, totalSamples);
+    //defer allocator.free(writeBuffer);
+
+    //const s = try startTime();
+    const mixedWave = generateSequence(
+        seq,
+        LOOP_DURATION,
+        seq.Bpm,
+        writeBuffer,
+        totalSamples,
+    );
+    const soundWave = c.LoadSoundFromWave(mixedWave);
+    //try endTimePrint("generateSequence => TODO", s);
+    //defer c.UnloadSound(soundWave);
+
+    // Write the wav to the filesystem asap.
+    var buf: [64]u8 = undefined;
+    const filename = try std.fmt.bufPrintZ(&buf, "{s} - {s}.wav", .{ seq.Song, seq.Artist });
+    if (!c.ExportWave(mixedWave, filename)) {
+        std.debug.print("Failed to dump .wav file!\n", .{});
+    }
+
+    return soundWave;
+}
+
 pub fn genWav(allocator: std.mem.Allocator) !void {
     c.InitAudioDevice(); // Needed for `LoadWave()`
 
@@ -286,40 +314,32 @@ pub fn genWav(allocator: std.mem.Allocator) !void {
     // Pattern{ .timing = "x___|x___|x___|x___|x___|x___|x___|x___|x___|x___|x___|x___|x___|x___|x___|x___", .name = "bass drum", .volume = 0.5, .sample = &kick },
     // Pattern{ .timing = "____|x___|____|x___|____|x___|____|x___|____|x___|____|x___|____|x___|____|x___", .name = "clap", .volume = 0.5, .sample = &clap },
 
-    // Choose your song:
-    const selectedSeq = &seqCL;
+    const Item = struct {
+        seq: *const Sequence,
+        sound: c.Sound,
 
-    // Generate the WAV sequence
-    const totalSamples = calcTotalSamples(selectedSeq.Bpm, LOOP_DURATION);
-    const writeBuffer = try allocator.alloc(i16, totalSamples);
-    defer allocator.free(writeBuffer);
+        const Self = @This();
+
+        fn dump(self: Self) void {
+            std.debug.print("{s} - {s} @ {d}bpm\n", .{ self.seq.Song, self.seq.Artist, self.seq.Bpm });
+        }
+    };
 
     const s = try startTime();
-    const mixedWave = generateSequence(
-        selectedSeq,
-        LOOP_DURATION,
-        selectedSeq.Bpm,
-        writeBuffer,
-        totalSamples,
-    );
-    const soundWave = c.LoadSoundFromWave(mixedWave);
-    try endTimePrint("generateSequence", s);
-    defer c.UnloadSound(soundWave);
+    var seqIdx: usize = 0;
+    const seqList = [_]Item{
+        .{ .seq = &seqCL, .sound = try processSequence(&seqCL, allocator) },
+        .{ .seq = &seqFITM, .sound = try processSequence(&seqFITM, allocator) },
+        .{ .seq = &seqJOI, .sound = try processSequence(&seqJOI, allocator) },
+        .{ .seq = &seqEE, .sound = try processSequence(&seqEE, allocator) },
+        .{ .seq = &seqPR, .sound = try processSequence(&seqPR, allocator) },
+        .{ .seq = &seq19, .sound = try processSequence(&seq19, allocator) },
+        .{ .seq = &seqHOT, .sound = try processSequence(&seqHOT, allocator) },
+        .{ .seq = &seqBU, .sound = try processSequence(&seqBU, allocator) },
+    };
+    try endTimePrint("Processed all loops in:", s);
 
-    // Write the wav to the filesystem asap.
-    if (!c.ExportWave(mixedWave, selectedSeq.Song ++ " - " ++ selectedSeq.Artist ++ ".wav")) {
-        std.debug.print("Failed to dump .wav file!\n", .{});
-    }
-
-    std.debug.print("\nPlaying: {s} - {s} @ {d} BPM\n", .{
-        selectedSeq.Song,
-        selectedSeq.Artist,
-        selectedSeq.Bpm,
-    });
-
-    // if (playComptimeWaveInstead) {
-    //     soundWave = loopA;
-    // }
+    std.debug.print("\n\n\n\n", .{});
 
     // Hacky stuff
     //c.SetSoundPitch(soundWave, 1.0);
@@ -327,9 +347,34 @@ pub fn genWav(allocator: std.mem.Allocator) !void {
     // NOTE: Audio plays async, while loop is all good.
     // Notice this is const and not a variable? Yeah, fuck you too.
     const beatsRemainFresh = true;
+    const BAR_COUNT = 4; // play for at least two bars
+    var lastSound: ?c.Sound = null;
+    var currSound = seqList[seqIdx].sound;
+
+    // Start initial song.
+    c.PlaySound(currSound);
+    var barCount: usize = 1;
+    seqList[seqIdx].dump();
     while (beatsRemainFresh) {
-        if (!c.IsSoundPlaying(soundWave)) {
-            c.PlaySound(soundWave);
+        if (!c.IsSoundPlaying(currSound)) {
+            if (barCount < BAR_COUNT) {
+                // play again
+                barCount += 1;
+                c.PlaySound(currSound);
+            } else {
+                // switch songs
+                barCount = 1; // Reset for new sound
+                seqIdx += 1;
+                if (seqIdx >= seqList.len) {
+                    seqIdx = 0;
+                }
+
+                // Swap sounds
+                lastSound = currSound;
+                currSound = seqList[seqIdx].sound;
+                seqList[seqIdx].dump();
+                c.PlaySound(currSound);
+            }
         }
         // Chill the fuck out, CPU.
         std.Thread.sleep(std.time.ns_per_ms * 1);
