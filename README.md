@@ -33,6 +33,14 @@ protected by the `AGPL-3.0` license. Additionally, while I intend to create a cl
 not be so strict on details and am mostly concerned with capturing the spirit of the original game. I might
 even diverge or change some aspects of the game such as the graphics, enemies, sound, music, etc.
 
+# Dependencies, Installing and Running:
+* Currently only tested and built on MacOS
+* Requires zlib: `brew install zlib`
+* Requires Zig 0.16.0 or higher to build
+* Requires Raylib 5.5 or higher to build (currently vendored in repo for MacOS)
+* Depends on zigimg (should be downloaded automatically)
+* Runnning: `zig build run`
+
 # Original
 
 - [ ] Original game runs at: 320x240, this game should as well but default to 640x480 and then 
