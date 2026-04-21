@@ -15,8 +15,8 @@ pub const Cloud = struct {
 
     const Self = @This();
 
-    pub fn init(texture: c.Texture) Cloud {
-        return Cloud{
+    pub fn init(texture: c.Texture) Self {
+        return Self{
             .mTexture = texture,
             .mXSpeed = @floatFromInt(c.GetRandomValue(1, 6)),
             .mX = @floatFromInt(c.GetRandomValue(0, conf.WIN_WIDTH)),
