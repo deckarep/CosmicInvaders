@@ -22,26 +22,20 @@ pub const GameState = struct {
     mWaveBanner: bnnr.WaveBanner = undefined,
     mHive: hive.Hive = undefined,
     mHiveCooldown: usize = conf.HiveRespawnCooldown,
-    mClouds: std.ArrayList(cld.Cloud) = undefined,
-    mFloatingScores: std.ArrayList(fls.FloatingScore) = undefined,
-    mEnemyProjectiles: std.ArrayList(pj.Proj) = undefined,
-    mPlayerProjectiles: std.ArrayList(pj.Proj) = undefined,
-    mInplaceExplosions: std.ArrayList(exp.Explosion) = undefined,
-    mWeaponStations: std.ArrayList(wp.WeaponStation) = undefined,
+    mClouds: std.ArrayList(cld.Cloud) = .empty,
+    mFloatingScores: std.ArrayList(fls.FloatingScore) = .empty,
+    mEnemyProjectiles: std.ArrayList(pj.Proj) = .empty,
+    mPlayerProjectiles: std.ArrayList(pj.Proj) = .empty,
+    mInplaceExplosions: std.ArrayList(exp.Explosion) = .empty,
+    mWeaponStations: std.ArrayList(wp.WeaponStation) = .empty,
 
     const Self = @This();
 
-    pub fn create(allocator: std.mem.Allocator) !Self {
+    pub fn create(allocator: std.mem.Allocator) Self {
         return Self{
             .mAllocator = allocator,
             .mWaveBanner = bnnr.WaveBanner.create(0),
             .mHive = hive.Hive.create(allocator),
-            .mClouds = try std.ArrayList(cld.Cloud).initCapacity(allocator, 0),
-            .mEnemyProjectiles = try std.ArrayList(pj.Proj).initCapacity(allocator, 0),
-            .mPlayerProjectiles = try std.ArrayList(pj.Proj).initCapacity(allocator, 0),
-            .mInplaceExplosions = try std.ArrayList(exp.Explosion).initCapacity(allocator, 0),
-            .mFloatingScores = try std.ArrayList(fls.FloatingScore).initCapacity(allocator, 0),
-            .mWeaponStations = try std.ArrayList(wp.WeaponStation).initCapacity(allocator, 0),
         };
     }
 

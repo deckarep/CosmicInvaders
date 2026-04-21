@@ -133,7 +133,7 @@ pub fn main() !void {
     try res.Resources.Load();
     defer res.Resources.Unload();
 
-    state.mGame = try state.GameState.create(alloc);
+    state.mGame = state.GameState.create(alloc);
     try state.mGame.init();
     defer state.mGame.deinit();
 

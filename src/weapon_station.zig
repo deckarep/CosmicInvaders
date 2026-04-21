@@ -14,6 +14,8 @@ pub const WeaponStationKind = enum(u8) {
 pub const StationCondition = enum(u8) {
     Normal, // Building is in normal static state.
     Firing, // Building is firing.
+    Hit, // Building has received a hit.
+    Hit2, // Extra frame to show hit state or not.
     Collapsing, // Building is actively collapsing and emitting various fire-balls and sharapnel.
     Dead, // Removed from screen, reaped from memory.
 };
@@ -69,6 +71,16 @@ pub const WeaponStation = struct {
                         self.mCondition = .Normal;
                         return;
                     },
+                    .Hit => {
+                        self.mFrameIdx = 5;
+                        self.mCondition = .Hit2;
+                        return;
+                    },
+                    .Hit2 => {
+                        self.mFrameIdx = 5;
+                        self.mCondition = .Normal;
+                        return;
+                    },
                     .Collapsing => {
                         // Spawn an explosion in a random x/y coord within the bounds of the weapon station.
                         const wsBounds = self.getBounds();
@@ -111,7 +123,7 @@ pub const WeaponStation = struct {
             .RocketLauncher => c.Vector2{ .x = 29, .y = 29 },
         };
 
-        return c.Rectangle{
+        return .{
             .x = self.mX,
             .y = self.mY,
             .width = wh.x * scale,
@@ -149,7 +161,6 @@ pub const WeaponStation = struct {
     }
 
     pub inline fn dead(self: Self) bool {
-        //return self.mHealth <= 0;
         return self.mCondition == .Dead;
     }
 
@@ -159,7 +170,7 @@ pub const WeaponStation = struct {
 
         if (c.CheckCollisionRecs(projBounds, self.getBounds())) {
             self.mHealth -= amount;
-
+            self.mCondition = .Hit;
             return true;
         }
 
