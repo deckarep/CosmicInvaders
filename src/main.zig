@@ -7,10 +7,11 @@ const hive = @import("hive.zig");
 const exp = @import("explosion.zig");
 const res = @import("resources.zig");
 const drw = @import("draw.zig");
-const c = @import("cdefs.zig").c;
+//const c = @import("cdefs.zig").c;
+const c = @import("c");
 
 // NOTE: This magic selects which concrete allocator depending on build mode.
-const GPA = std.heap.GeneralPurposeAllocator(.{ .safety = true });
+const GPA = std.heap.DebugAllocator(.{ .safety = true });
 var gpa: ?GPA = gpaBreak: {
     if (builtin.link_libc) {
         if (switch (builtin.mode) {
@@ -133,7 +134,7 @@ pub fn main() !void {
     try res.Resources.Load();
     defer res.Resources.Unload();
 
-    state.mGame = state.GameState.create(alloc);
+    state.mGame = try state.GameState.create(alloc);
     try state.mGame.init();
     defer state.mGame.deinit();
 

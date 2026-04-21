@@ -1,5 +1,6 @@
 const std = @import("std");
-const c = @import("cdefs.zig").c;
+//const c = @import("cdefs.zig").c;
+const c = @import("c");
 const conf = @import("conf.zig");
 const fnts = @import("resources.zig").Resources.Fonts;
 const esngs = @import("easings.zig");

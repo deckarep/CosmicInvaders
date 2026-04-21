@@ -15,27 +15,41 @@ pub fn build(b: *std.Build) void {
     // set a preferred release mode, allowing the user to decide how to optimize.
     const optimize = b.standardOptimizeOption(.{});
 
-    const exe = b.addExecutable(.{
-        .name = "CosmicInvadersReader",
-        .root_source_file = b.path("src/main.zig"),
+    const translate_c = b.addTranslateC(.{
+        .root_source_file = b.path("src/c.h"),
         .target = target,
         .optimize = optimize,
     });
 
     // Link Zlib dep, using the systems (homebrew installed btw)
-    exe.linkSystemLibrary("zlib");
-
-    exe.addObjectFile(b.path("libs/raylib-5.5_macos/lib/libraylib.a"));
-    exe.addIncludePath(b.path("libs/raylib-5.5_macos/include"));
-
-    exe.linkFramework("CoreVideo");
-    exe.linkFramework("IOKit");
-    exe.linkFramework("Cocoa");
-    exe.linkFramework("GLUT");
-    exe.linkFramework("OpenGL");
-
+    translate_c.linkSystemLibrary("zlib", .{});
     // Link C
-    exe.linkSystemLibrary("c");
+    translate_c.linkSystemLibrary("c", .{});
+    translate_c.addIncludePath(b.path("libs/raylib-5.5_macos/include"));
+
+    const exe = b.addExecutable(.{
+        .name = "CosmicInvadersReader",
+        .root_module = b.createModule(.{
+            .root_source_file = b.path("src/main.zig"),
+            .optimize = optimize,
+            .target = target,
+            .imports = &.{
+                .{
+                    .name = "c",
+                    .module = translate_c.createModule(),
+                },
+            },
+        }),
+    });
+
+    exe.root_module.addObjectFile(b.path("libs/raylib-5.5_macos/lib/libraylib.a"));
+    // exe.root_module.addIncludePath(b.path("libs/raylib-5.5_macos/include"));
+
+    exe.root_module.linkFramework("CoreVideo", .{});
+    exe.root_module.linkFramework("IOKit", .{});
+    exe.root_module.linkFramework("Cocoa", .{});
+    exe.root_module.linkFramework("GLUT", .{});
+    exe.root_module.linkFramework("OpenGL", .{});
 
     const zigimg_dependency = b.dependency("zigimg", .{
         .target = target,
@@ -73,9 +87,7 @@ pub fn build(b: *std.Build) void {
     run_step.dependOn(&run_cmd.step);
 
     const exe_unit_tests = b.addTest(.{
-        .root_source_file = b.path("src/main.zig"),
-        .target = target,
-        .optimize = optimize,
+        .root_module = exe.root_module,
     });
 
     const run_exe_unit_tests = b.addRunArtifact(exe_unit_tests);

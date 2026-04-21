@@ -1,4 +1,5 @@
-const c = @import("cdefs.zig").c;
+//const c = @import("cdefs.zig").c;
+const c = @import("c");
 const conf = @import("conf.zig");
 const drw = @import("draw.zig");
 const fnts = @import("resources.zig").Resources.Fonts;

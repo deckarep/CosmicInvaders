@@ -1,5 +1,6 @@
 const std = @import("std");
-const c = @import("cdefs.zig").c;
+//const c = @import("cdefs.zig").c;
+const c = @import("c");
 const conf = @import("conf.zig");
 const res = @import("resources.zig");
 const drw = @import("draw.zig");
@@ -93,12 +94,12 @@ pub const AlienBullet = struct {
     }
 
     pub fn deinit(ptr: *anyopaque) void {
-        const self: *Self = @alignCast(@ptrCast(ptr));
+        const self: *Self = @ptrCast(@alignCast(ptr));
         self.base.mAllocator.destroy(self);
     }
 
     pub fn update(ptr: *anyopaque) anyerror!void {
-        const self: *Self = @alignCast(@ptrCast(ptr));
+        const self: *Self = @ptrCast(@alignCast(ptr));
         if (self.base.isDead()) return;
 
         self.base.update();
@@ -111,7 +112,7 @@ pub const AlienBullet = struct {
     }
 
     pub fn draw(ptr: *anyopaque) anyerror!void {
-        const self: *Self = @alignCast(@ptrCast(ptr));
+        const self: *Self = @ptrCast(@alignCast(ptr));
         if (self.base.isDead()) return;
 
         const w = 5;
@@ -130,22 +131,22 @@ pub const AlienBullet = struct {
     }
 
     pub fn markDead(ptr: *anyopaque) void {
-        const self: *Self = @alignCast(@ptrCast(ptr));
+        const self: *Self = @ptrCast(@alignCast(ptr));
         self.base.markDead();
     }
 
     pub fn isDead(ptr: *anyopaque) bool {
-        const self: *Self = @alignCast(@ptrCast(ptr));
+        const self: *Self = @ptrCast(@alignCast(ptr));
         return self.base.isDead();
     }
 
     pub fn getPos(ptr: *anyopaque) c.Vector2 {
-        const self: *Self = @alignCast(@ptrCast(ptr));
+        const self: *Self = @ptrCast(@alignCast(ptr));
         return self.base.getPos();
     }
 
     pub fn getBounds(ptr: *anyopaque) c.Rectangle {
-        const self: *Self = @alignCast(@ptrCast(ptr));
+        const self: *Self = @ptrCast(@alignCast(ptr));
 
         const scale = 2.0;
 
@@ -186,12 +187,12 @@ pub const CanonBullet = struct {
     }
 
     pub fn deinit(ptr: *anyopaque) void {
-        const self: *Self = @alignCast(@ptrCast(ptr));
+        const self: *Self = @ptrCast(@alignCast(ptr));
         self.base.mAllocator.destroy(self);
     }
 
     pub fn update(ptr: *anyopaque) anyerror!void {
-        const self: *Self = @alignCast(@ptrCast(ptr));
+        const self: *Self = @ptrCast(@alignCast(ptr));
         if (self.base.isDead()) return;
 
         self.base.update();
@@ -200,7 +201,7 @@ pub const CanonBullet = struct {
     }
 
     pub fn draw(ptr: *anyopaque) anyerror!void {
-        const self: *Self = @alignCast(@ptrCast(ptr));
+        const self: *Self = @ptrCast(@alignCast(ptr));
         if (self.base.isDead()) return;
 
         const selectedTexture = res.Resources.LaserSm;
@@ -229,22 +230,22 @@ pub const CanonBullet = struct {
     }
 
     pub fn markDead(ptr: *anyopaque) void {
-        const self: *Self = @alignCast(@ptrCast(ptr));
+        const self: *Self = @ptrCast(@alignCast(ptr));
         self.base.markDead();
     }
 
     pub fn isDead(ptr: *anyopaque) bool {
-        const self: *Self = @alignCast(@ptrCast(ptr));
+        const self: *Self = @ptrCast(@alignCast(ptr));
         return self.base.isDead();
     }
 
     pub fn getPos(ptr: *anyopaque) c.Vector2 {
-        const self: *Self = @alignCast(@ptrCast(ptr));
+        const self: *Self = @ptrCast(@alignCast(ptr));
         return self.base.getPos();
     }
 
     pub fn getBounds(ptr: *anyopaque) c.Rectangle {
-        const self: *Self = @alignCast(@ptrCast(ptr));
+        const self: *Self = @ptrCast(@alignCast(ptr));
 
         const selectedTexture = res.Resources.LaserSm;
         const tw: f32 = @floatFromInt(selectedTexture.width);

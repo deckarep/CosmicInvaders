@@ -5,7 +5,8 @@ const res = @import("resources.zig");
 const pj = @import("projectile.zig");
 const drw = @import("draw.zig");
 const esngs = @import("easings.zig");
-const c = @import("cdefs.zig").c;
+//const c = @import("cdefs.zig").c;
+const c = @import("c");
 
 const invWidth = 16 * 2;
 const invHeight = 13 * 2;
@@ -55,7 +56,7 @@ pub const Hive = struct {
 
     pub fn init(self: *Self) !void {
         // Create the invaders.
-        self.mInvaders = std.ArrayList(Invader).init(self.mAllocator);
+        self.mInvaders = try std.ArrayList(Invader).initCapacity(self.mAllocator, 0);
     }
 
     // TODO: some kind of functions to initialize the invader count, and rows.
@@ -70,7 +71,7 @@ pub const Hive = struct {
 
         for (0..self.mRows) |y| {
             for (0..12) |x| {
-                try self.mInvaders.append(Invader{
+                try self.mInvaders.append(self.mAllocator, Invader{
                     .mX = xOffset + ((invWidth + invXPadding) * @as(f32, @floatFromInt(x))),
                     .mY = yOffset + ((invHeight + invYPadding) * @as(f32, @floatFromInt(y))),
                 });
@@ -83,7 +84,7 @@ pub const Hive = struct {
     }
 
     pub fn deinit(self: *Self) void {
-        self.mInvaders.deinit();
+        self.mInvaders.deinit(self.mAllocator);
     }
 
     pub inline fn dead(self: Self) bool {
@@ -335,7 +336,7 @@ pub const Hive = struct {
                 const selectedInv = self.mInvaders.items[randInvIdx];
                 const p = try pj.AlienBullet.create(selectedInv.mX, selectedInv.mY, self.mAllocator);
                 const bullet = p.asProjectile();
-                try state.mGame.mEnemyProjectiles.append(bullet);
+                try state.mGame.mEnemyProjectiles.append(self.mAllocator, bullet);
 
                 self.mState = .Scanning;
             },
