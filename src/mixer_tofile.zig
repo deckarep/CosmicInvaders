@@ -395,6 +395,7 @@ fn mixWave(buffer: []i16, wave: ?*c.Wave, start_sample: usize, volume: f32) void
     const waveSize = wave.?.frameCount;
 
     while (sampleIndex < waveSize and (start_sample + sampleIndex) < buffer.len) : (sampleIndex += 1) {
+        // NOTE: saturating addition here, basically a form of clipping as it stands.
         buffer[start_sample + sampleIndex] +|= @intFromFloat(@as(f32, @floatFromInt(waveData[sampleIndex])) * volume);
     }
 }
