@@ -43,8 +43,6 @@ pub fn build(b: *std.Build) void {
     });
 
     exe.root_module.addObjectFile(b.path("libs/raylib-5.5_macos/lib/libraylib.a"));
-    // exe.root_module.addIncludePath(b.path("libs/raylib-5.5_macos/include"));
-
     exe.root_module.linkFramework("CoreVideo", .{});
     exe.root_module.linkFramework("IOKit", .{});
     exe.root_module.linkFramework("Cocoa", .{});

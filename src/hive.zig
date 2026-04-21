@@ -5,7 +5,6 @@ const res = @import("resources.zig");
 const pj = @import("projectile.zig");
 const drw = @import("draw.zig");
 const esngs = @import("easings.zig");
-//const c = @import("cdefs.zig").c;
 const c = @import("c");
 
 const invWidth = 16 * 2;

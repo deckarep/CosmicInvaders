@@ -7,7 +7,6 @@ const hive = @import("hive.zig");
 const exp = @import("explosion.zig");
 const res = @import("resources.zig");
 const drw = @import("draw.zig");
-//const c = @import("cdefs.zig").c;
 const c = @import("c");
 
 // NOTE: This magic selects which concrete allocator depending on build mode.
@@ -124,10 +123,10 @@ pub fn main() !void {
 
     //try regenAllBitmaps();
 
-    c.SetConfigFlags(c.FLAG_VSYNC_HINT | c.FLAG_WINDOW_RESIZABLE);
-    c.InitWindow(conf.WIN_WIDTH, conf.WIN_HEIGHT, "Cosmic Invaders");
+    c.SetConfigFlags(c.FLAG_WINDOW_RESIZABLE); //| c.FLAG_VSYNC_HINT);
+    c.InitWindow(conf.WIN_WIDTH, conf.WIN_HEIGHT, "Cosmic Invaders - @deckarep");
     c.InitAudioDevice();
-    //c.SetTargetFPS(60);
+    c.SetTargetFPS(60);
     defer c.CloseWindow();
     defer c.CloseAudioDevice();
 

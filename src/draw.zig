@@ -1,5 +1,4 @@
 const std = @import("std");
-//const c = @import("cdefs.zig").c;
 const c = @import("c");
 
 pub fn drawTextureScaled(x: f32, y: f32, texture: c.Texture, view: c.Rectangle, scale: f32) void {

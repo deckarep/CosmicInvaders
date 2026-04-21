@@ -9,7 +9,6 @@ const fls = @import("floating_scores.zig");
 const bnnr = @import("wave_banner.zig");
 const wp = @import("weapon_station.zig");
 const drw = @import("draw.zig");
-//const c = @import("cdefs.zig").c;
 const c = @import("c");
 
 pub var mGame: GameState = undefined;

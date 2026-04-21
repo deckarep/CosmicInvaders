@@ -1,4 +1,3 @@
-//const c = @import("cdefs.zig").c;
 const c = @import("c");
 
 // TODO: organize this crap into categories like Hive, vs Alien, vs WeaponStation, etc.

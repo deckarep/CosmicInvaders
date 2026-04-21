@@ -1,4 +1,3 @@
-//const c = @import("cdefs.zig").c;
 const c = @import("c");
 const drw = @import("draw.zig");
 const state = @import("game_state.zig");
