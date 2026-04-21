@@ -127,6 +127,20 @@ pub const AlienBullet = struct {
         // NOTE: to call the interface getPos we have to pass in the raw ptr. Yechy.
         const prjPos = getPos(ptr);
         drw.drawTextureScaled(prjPos.x, prjPos.y, res.Resources.AlienBullet, view, 2.0);
+
+        // Draw red bounding box.
+        self.debug_draw(w, h);
+    }
+
+    fn debug_draw(self: Self, w: comptime_int, h: comptime_int) void {
+        const scale = 2;
+        c.DrawRectangleLines(
+            @intFromFloat(self.base.mX),
+            @intFromFloat(self.base.mY),
+            w * scale,
+            h * scale,
+            c.RED,
+        );
     }
 
     pub fn markDead(ptr: *anyopaque) void {
