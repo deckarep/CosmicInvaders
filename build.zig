@@ -25,7 +25,7 @@ pub fn build(b: *std.Build) void {
     translate_c.linkSystemLibrary("zlib", .{});
     // Link C
     translate_c.linkSystemLibrary("c", .{});
-    translate_c.addIncludePath(b.path("libs/raylib-5.5_macos/include"));
+    translate_c.addIncludePath(b.path("libs/raylib-6.0_macos/include"));
 
     const exe = b.addExecutable(.{
         .name = "CosmicInvadersReader",
@@ -42,7 +42,7 @@ pub fn build(b: *std.Build) void {
         }),
     });
 
-    exe.root_module.addObjectFile(b.path("libs/raylib-5.5_macos/lib/libraylib.a"));
+    exe.root_module.addObjectFile(b.path("libs/raylib-6.0_macos/lib/libraylib.a"));
     exe.root_module.linkFramework("CoreVideo", .{});
     exe.root_module.linkFramework("IOKit", .{});
     exe.root_module.linkFramework("Cocoa", .{});
