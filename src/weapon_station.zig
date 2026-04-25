@@ -56,7 +56,7 @@ pub const WeaponStation = struct {
                         }
 
                         // Should we be firing?
-                        self.mFireCountdown -= 1;
+                        if (self.mFireCountdown > 0) self.mFireCountdown -= 1;
                         const shouldFire = self.mFireCountdown == 0;
                         if (shouldFire) {
                             self.mCondition = .Firing;
