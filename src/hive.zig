@@ -89,24 +89,23 @@ pub const Hive = struct {
     }
 
     fn chooseTwoInvaders(self: *Self) void {
-        // For now just pick two random invaders and swap them.
-        const invTotal = self.mInvaders.items.len - 1;
-        const randInvIdx: usize = @intCast(c.GetRandomValue(0, @intCast(invTotal)));
-        self.mInvaderSwaps.a = &self.mInvaders.items[randInvIdx];
+        const last_idx = self.mInvaders.items.len - 1;
+
+        const a_idx: usize = @intCast(c.GetRandomValue(0, @intCast(last_idx)));
+
+        // Find another invader that is not the same one, so a swap can occur.
+        var b_idx = a_idx;
+        while (b_idx == a_idx) {
+            b_idx = @intCast(c.GetRandomValue(0, @intCast(last_idx)));
+        }
+
+        self.mInvaderSwaps.a = &self.mInvaders.items[a_idx];
         self.mInvaderSwaps.aX = self.mInvaderSwaps.a.?.mX;
         self.mInvaderSwaps.aY = self.mInvaderSwaps.a.?.mY;
 
-        var randInv2Idx: usize = randInvIdx;
-        while (randInvIdx == randInv2Idx) {
-            const newIdx: usize = @intCast(c.GetRandomValue(0, @intCast(invTotal)));
-            self.mInvaderSwaps.b = &self.mInvaders.items[newIdx];
-            self.mInvaderSwaps.bX = self.mInvaderSwaps.b.?.mX;
-            self.mInvaderSwaps.bY = self.mInvaderSwaps.b.?.mY;
-            randInv2Idx += 1;
-            if (randInv2Idx > (invTotal - 1)) {
-                randInv2Idx = 0;
-            }
-        }
+        self.mInvaderSwaps.b = &self.mInvaders.items[b_idx];
+        self.mInvaderSwaps.bX = self.mInvaderSwaps.b.?.mX;
+        self.mInvaderSwaps.bY = self.mInvaderSwaps.b.?.mY;
     }
 
     pub fn cullInvaders(self: *Self) !void {
@@ -181,7 +180,7 @@ pub const Hive = struct {
             }
         }
 
-        return c.Rectangle{
+        return .{
             .x = minX,
             .y = minY,
             .width = maxX - minX,
@@ -260,8 +259,8 @@ pub const Hive = struct {
                     self.mAttackCountdown = conf.AttackCooldown;
                 }
 
-                // Bump swap countdown.
-                if (conf.SwapEnabled) {
+                // When enabled, do the swap but only if at least 2 invaders are still alive.
+                if (conf.SwapEnabled and self.mInvaders.items.len > 1) {
                     self.mSwapCountdown -= 1;
                     if (self.mSwapCountdown <= 0) {
                         self.chooseTwoInvaders();
@@ -291,7 +290,7 @@ pub const Hive = struct {
                 const invA = self.mInvaderSwaps.a.?;
                 const invB = self.mInvaderSwaps.b.?;
 
-                const easeFn = esngs.easeInOutBounce;
+                const easeFn = esngs.easeInOutCubic;
 
                 // Move Invader A
                 invA.mX = easeFn(

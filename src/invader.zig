@@ -104,7 +104,7 @@ pub const Invader = struct {
     }
 
     pub inline fn getPos(self: Self) c.Vector2 {
-        return c.Vector2{ .x = self.mX, .y = self.mY };
+        return .{ .x = self.mX, .y = self.mY };
     }
 
     pub inline fn getBounds(self: Self) c.Rectangle {

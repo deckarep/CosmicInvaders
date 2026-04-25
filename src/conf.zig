@@ -22,7 +22,7 @@ pub const HiveHorizontalSpeed = 1;
 pub const HiveDescendSpeed = 1;
 pub const NumClouds = 6;
 pub const DescendCountdown = 10;
-pub const SwapEnabled = false;
+pub const SwapEnabled = true;
 
 pub const EnemyProjectileYSpeed = 2;
 
