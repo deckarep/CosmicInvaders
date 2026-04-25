@@ -125,7 +125,7 @@ pub const Invader = struct {
 
         const collided = c.CheckCollisionRecs(projBounds, invBounds);
         if (collided) {
-            self.mHits -= 1;
+            if (self.mHits > 0) self.mHits -= 1;
 
             // Put the invader into damaged mode.
             self.mState = .Damaged;

@@ -50,7 +50,7 @@ pub const Resources = struct {
         Resources.Background = loadTexture(ROOT_PATH ++ "bg.mz.png");
 
         for (1..6) |i| {
-            var buf: [32]u8 = undefined;
+            var buf: [64]u8 = undefined;
             const path = try std.fmt.bufPrintZ(
                 buf[0..],
                 "{s}cloud{d}.mz.png",
@@ -59,10 +59,12 @@ pub const Resources = struct {
             Resources.Clouds[i - 1] = loadTexture(path);
         }
 
+        // Aliens
         Resources.Invader1 = loadTexture(ROOT_PATH ++ "invader1.sz.png");
         Resources.AlienBullet = loadTexture(ROOT_PATH ++ "alienbullet.sz.png");
-        Resources.Turret2 = loadTexture(ROOT_PATH ++ "turret2.mz.png");
 
+        // Weapons
+        Resources.Turret2 = loadTexture(ROOT_PATH ++ "turret2.mz.png");
         Resources.Canon = loadTexture(ROOT_PATH ++ "turret1.sz.png");
         Resources.LaserSm = loadTexture(ROOT_PATH ++ "laser_small.mz.png");
         Resources.LaserMed = loadTexture(ROOT_PATH ++ "laser_medium.mz.png");
