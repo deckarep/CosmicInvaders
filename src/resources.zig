@@ -49,14 +49,14 @@ pub const Resources = struct {
         // Textures
         Resources.Background = loadTexture(ROOT_PATH ++ "bg.mz.png");
 
-        for (0..5) |i| {
+        for (1..6) |i| {
             var buf: [32]u8 = undefined;
             const path = try std.fmt.bufPrintZ(
                 buf[0..],
                 "{s}cloud{d}.mz.png",
                 .{ ROOT_PATH, i },
             );
-            Resources.Clouds[i] = loadTexture(path);
+            Resources.Clouds[i - 1] = loadTexture(path);
         }
 
         Resources.Invader1 = loadTexture(ROOT_PATH ++ "invader1.sz.png");
