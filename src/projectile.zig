@@ -75,7 +75,7 @@ pub const BaseProjectile = struct {
     }
 
     inline fn getPos(self: *Self) c.Vector2 {
-        return c.Vector2{ .x = self.mX, .y = self.mY };
+        return .{ .x = self.mX, .y = self.mY };
     }
 };
 
@@ -168,6 +168,156 @@ pub const AlienBullet = struct {
             .y = self.base.mY,
             .width = @as(f32, @floatFromInt(res.Resources.AlienBullet.width)) * scale,
             .height = @as(f32, @floatFromInt(res.Resources.AlienBullet.height)) * scale,
+        };
+    }
+
+    pub fn asProjectile(self: *Self) Proj {
+        return Proj{
+            .ptr = self,
+
+            .deinitFn = deinit,
+            .updateFn = update,
+            .drawFn = draw,
+
+            .getPosFn = getPos,
+            .getBoundsFn = getBounds,
+
+            .isDeadFn = isDead,
+            .markDeadFn = markDead,
+        };
+    }
+};
+
+pub const MissileProj = struct {
+    base: BaseProjectile,
+
+    mTexture: c.Texture = undefined,
+    mRotation: f32 = 0.0,
+    mSpeed: f32, // pixels per second.
+    // For now, let's just heat sick to the mouse coords.
+    //mInvTargetIdx: usize = 0,
+
+    const Self = @This();
+
+    pub fn create(x: f32, y: f32, rot: f32, allocator: std.mem.Allocator) !*Self {
+        const missile = try allocator.create(Self);
+        missile.base.init(x, y, allocator);
+        missile.mRotation = rot;
+        missile.mSpeed = 60.0;
+        missile.mTexture = res.Resources.Projectiles.Missile;
+        return missile;
+    }
+
+    pub fn deinit(ptr: *anyopaque) void {
+        const self: *Self = @ptrCast(@alignCast(ptr));
+        self.base.mAllocator.destroy(self);
+    }
+
+    pub fn update(ptr: *anyopaque) anyerror!void {
+        const self: *Self = @ptrCast(@alignCast(ptr));
+        if (self.base.isDead()) return;
+
+        self.base.update();
+
+        // Move towards target: (mouse pos for now)
+        const myPos = c.Vector2{ .x = self.base.mX, .y = self.base.mY };
+        const target = c.GetMousePosition();
+        const maxDist: f32 = self.mSpeed * c.GetFrameTime();
+        const resultVec = c.Vector2MoveTowards(
+            myPos,
+            target,
+            maxDist,
+        );
+
+        self.base.mX = resultVec.x;
+        self.base.mY = resultVec.y;
+
+        // Orient towards target.
+        const dir = c.Vector2{
+            .x = target.x - myPos.x,
+            .y = myPos.y - target.y, // flip Y
+        };
+        const angleRad = std.math.atan2(dir.y, dir.x);
+        var angleDeg = angleRad * (180.0) / std.math.pi;
+        if (angleDeg < 0) angleDeg += 360.0;
+
+        self.mRotation = angleDeg - 90; // subtract 90 to fix orientation.
+        self.mRotation = @mod(self.mRotation, 360.0);
+    }
+
+    pub fn markDead(ptr: *anyopaque) void {
+        const self: *Self = @ptrCast(@alignCast(ptr));
+        self.base.markDead();
+    }
+
+    pub fn isDead(ptr: *anyopaque) bool {
+        const self: *Self = @ptrCast(@alignCast(ptr));
+        return self.base.isDead();
+    }
+
+    pub fn getPos(ptr: *anyopaque) c.Vector2 {
+        const self: *Self = @ptrCast(@alignCast(ptr));
+        return self.base.getPos();
+    }
+
+    pub fn draw(ptr: *anyopaque) anyerror!void {
+        const self: *Self = @ptrCast(@alignCast(ptr));
+        if (self.base.isDead()) return;
+
+        // The missle sprite starts: -> direction and goes counter clockwise. 2 rows, 8 sprites per row.
+        // 0   = right
+        // 90  = up
+        // 180 = left
+        // 270 = down
+        const frameCount = 16.0;
+        const rotSegment = 360.0 / frameCount;
+
+        // Missile art starts pointing right.
+        var normalizedRot = @mod(self.mRotation + 90.0, 360.0);
+        if (normalizedRot < 0.0) normalizedRot += 360.0;
+
+        const frame: usize = @as(usize, @intFromFloat(@floor(normalizedRot / rotSegment))) % 16;
+
+        const celXOffset: f32 = @floatFromInt(frame % 8);
+        const celYOffset: f32 = @floatFromInt(frame / 8);
+
+        const celw = 8.0;
+        const celh = 8.0;
+
+        const view = c.Rectangle{
+            .x = celXOffset * celw,
+            .y = celYOffset * celh,
+            .width = celw,
+            .height = celh,
+        };
+
+        const scale = 2;
+        drw.drawTextureScaled(self.base.mX, self.base.mY, self.mTexture, view, scale);
+
+        //std.debug.print("rot => {d}\n", .{self.mRotation});
+
+        // Draw red bounding box.
+        c.DrawRectangleLines(
+            @intFromFloat(self.base.mX),
+            @intFromFloat(self.base.mY),
+            celw * scale,
+            celh * scale,
+            c.RED,
+        );
+    }
+
+    pub fn getBounds(ptr: *anyopaque) c.Rectangle {
+        const self: *Self = @ptrCast(@alignCast(ptr));
+
+        const tw: f32 = 8.0;
+        const th: f32 = 8.0;
+        const scale = 2.0;
+
+        return c.Rectangle{
+            .x = self.base.mX,
+            .y = self.base.mY,
+            .width = tw * scale,
+            .height = th * scale,
         };
     }
 

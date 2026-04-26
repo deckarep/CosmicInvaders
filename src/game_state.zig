@@ -339,8 +339,10 @@ pub const GameState = struct {
     }
 
     pub fn spawnCanonBullet(self: *Self, x: f32, y: f32) !void {
-        const cBullet = try pj.CanonBullet.create(x, y, self.mAllocator);
-        const p = cBullet.asProjectile();
+        const missileProj = try pj.MissileProj.create(x, y, 0.0, self.mAllocator);
+        //const cBullet = try pj.CanonBullet.create(x, y, self.mAllocator);
+        //const p = cBullet.asProjectile();
+        const p = missileProj.asProjectile();
         try self.mPlayerProjectiles.append(self.mAllocator, p);
     }
 };

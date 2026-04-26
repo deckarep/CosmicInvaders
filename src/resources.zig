@@ -28,6 +28,11 @@ pub const Resources = struct {
         pub var FieryExplosion: c.Texture = undefined;
     };
 
+    // Projectiles
+    pub const Projectiles = struct {
+        pub var Missile: c.Texture = undefined;
+    };
+
     // Game Fonts.
     pub const Fonts = struct {
         pub var Font1: c.Font = undefined;
@@ -68,6 +73,9 @@ pub const Resources = struct {
         Resources.Canon = loadTexture(ROOT_PATH ++ "turret1.sz.png");
         Resources.LaserSm = loadTexture(ROOT_PATH ++ "laser_small.mz.png");
         Resources.LaserMed = loadTexture(ROOT_PATH ++ "laser_medium.mz.png");
+
+        // Projectiles
+        Resources.Projectiles.Missile = loadTexture(ROOT_PATH ++ "missile.sz.png");
 
         // Effects
         Resources.Effects.Poof = loadTexture(ROOT_PATH ++ "poof.sz.png");
@@ -135,6 +143,9 @@ pub const Resources = struct {
         unloadTexture(Resources.LaserSm);
         unloadTexture(Resources.LaserMed);
         unloadTexture(Resources.AlienBullet);
+
+        // Projectiles
+        unloadTexture(Resources.Projectiles.Missile);
 
         // Effects
         unloadTexture(Resources.Effects.Poof);
