@@ -194,16 +194,19 @@ pub const MissileProj = struct {
     mTexture: c.Texture = undefined,
     mRotation: f32 = 0.0,
     mSpeed: f32, // pixels per second.
+    mExplodeCooldown: f32,
     // For now, let's just heat sick to the mouse coords.
     //mInvTargetIdx: usize = 0,
 
     const Self = @This();
+    const ExplosionEveryNFrames = 30;
 
     pub fn create(x: f32, y: f32, rot: f32, allocator: std.mem.Allocator) !*Self {
         const missile = try allocator.create(Self);
         missile.base.init(x, y, allocator);
         missile.mRotation = rot;
         missile.mSpeed = 60.0;
+        missile.mExplodeCooldown = ExplosionEveryNFrames; // config this
         missile.mTexture = res.Resources.Projectiles.Missile;
         return missile;
     }
@@ -243,6 +246,15 @@ pub const MissileProj = struct {
 
         self.mRotation = angleDeg - 90; // subtract 90 to fix orientation.
         self.mRotation = @mod(self.mRotation, 360.0);
+
+        if (self.mExplodeCooldown > 0) {
+            self.mExplodeCooldown -= 1;
+        }
+
+        if (self.mExplodeCooldown == 0) {
+            try state.mGame.spawnPuff2Explosion(myPos.x + 4, myPos.y + 4);
+            self.mExplodeCooldown = ExplosionEveryNFrames;
+        }
     }
 
     pub fn markDead(ptr: *anyopaque) void {

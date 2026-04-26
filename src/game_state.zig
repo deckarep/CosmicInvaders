@@ -320,6 +320,10 @@ pub const GameState = struct {
         try self.mInplaceExplosions.append(self.mAllocator, exp.Explosion.create(x, y, 7, res.Resources.Effects.Poof));
     }
 
+    pub fn spawnPuff2Explosion(self: *Self, x: f32, y: f32) !void {
+        try self.mInplaceExplosions.append(self.mAllocator, exp.Explosion.create(x, y, 8, res.Resources.Effects.Puff2));
+    }
+
     pub fn spawnMiniRedFloatingScore(self: *Self, text: [:0]const u8, x: f32, y: f32) !void {
         try self.mFloatingScores.append(self.mAllocator, fls.FloatingScore.create(
             text,

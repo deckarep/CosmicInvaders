@@ -56,12 +56,18 @@ pub const Explosion = struct {
         if (self.ended()) return;
 
         // WARN: hardcoded bullshit.
+        // poof
         var w: f32 = 18;
         var h: f32 = 18;
 
         if (self.mTexture.height == 24) {
+            // explosion_small
             w = 17;
             h = 24;
+        } else if (self.mTexture.height == 15) {
+            // puff2
+            w = 11;
+            h = 15;
         }
 
         const hw = w / 2.0;
