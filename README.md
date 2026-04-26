@@ -1,7 +1,13 @@
 # Cosmic Invaders
 
+# Original Game
 <p align="center">
-    <img src="https://raw.githubusercontent.com/deckarep/CosmicInvaders/refs/heads/main/screenshot.png">
+    <img src="https://raw.githubusercontent.com/deckarep/CosmicInvaders/refs/heads/main/screenshot_original.png">
+</p>
+
+# Zig Game
+<p align="center">
+    <img src="https://raw.githubusercontent.com/deckarep/CosmicInvaders/refs/heads/main/screenshot_new.png">
 </p>
 
 These assets come from an old Allegro ~4.2 game and are in zlib compressed format. Two types of bitmap files
