@@ -52,8 +52,8 @@ pub const Hive = struct {
     }
 
     pub fn init(self: *Self) !void {
-        // Create the invaders.
-        self.mInvaders = try std.ArrayList(inv.Invader).initCapacity(self.mAllocator, 0);
+        // Create the empty invaders list.
+        self.mInvaders = .empty;
     }
 
     // TODO: some kind of functions to initialize the invader count, and rows.
@@ -186,6 +186,15 @@ pub const Hive = struct {
             .width = maxX - minX,
             .height = maxY - minY,
         };
+    }
+
+    pub fn getRandomInvader(self: Self) ?*inv.Invader {
+        if (self.mInvaders.items.len > 0) {
+            const invIdx = c.GetRandomValue(0, self.mInvaders.items.len - 1);
+            return &self.mInvaders.items[@intCast(invIdx)];
+        }
+
+        return null;
     }
 
     pub fn checkInvaderCollided(self: *Self, invader: *inv.Invader) bool {

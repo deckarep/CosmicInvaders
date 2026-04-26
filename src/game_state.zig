@@ -272,14 +272,14 @@ pub const GameState = struct {
             try prj.draw();
         }
 
+        // Explosions (must appear below player projectiles)
+        for (self.mInplaceExplosions.items) |*expl| {
+            expl.draw();
+        }
+
         // Player projectiles
         for (self.mPlayerProjectiles.items) |p| {
             try p.draw();
-        }
-
-        // Explosions
-        for (self.mInplaceExplosions.items) |*expl| {
-            expl.draw();
         }
 
         // Floating scores.

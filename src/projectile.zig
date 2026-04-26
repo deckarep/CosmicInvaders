@@ -2,6 +2,7 @@ const std = @import("std");
 const c = @import("c");
 const conf = @import("conf.zig");
 const res = @import("resources.zig");
+const inv = @import("invader.zig");
 const drw = @import("draw.zig");
 const state = @import("game_state.zig");
 
@@ -191,29 +192,47 @@ pub const AlienBullet = struct {
 pub const MissileProj = struct {
     base: BaseProjectile,
 
+    mId: usize = 0,
     mTexture: c.Texture = undefined,
     mRotation: f32 = 0.0,
     mSpeed: f32, // pixels per second.
     mExplodeCooldown: f32,
+    mInvaderToSeek: ?*inv.Invader,
     // For now, let's just heat sick to the mouse coords.
     //mInvTargetIdx: usize = 0,
 
     const Self = @This();
-    const ExplosionEveryNFrames = 30;
+    const ExplosionEveryNFrames = 10;
 
     pub fn create(x: f32, y: f32, rot: f32, allocator: std.mem.Allocator) !*Self {
         const missile = try allocator.create(Self);
         missile.base.init(x, y, allocator);
         missile.mRotation = rot;
-        missile.mSpeed = 60.0;
+        missile.mSpeed = @floatFromInt(c.GetRandomValue(60, 75));
         missile.mExplodeCooldown = ExplosionEveryNFrames; // config this
         missile.mTexture = res.Resources.Projectiles.Missile;
+        missile.findInvaderToSeek();
         return missile;
     }
 
     pub fn deinit(ptr: *anyopaque) void {
         const self: *Self = @ptrCast(@alignCast(ptr));
         self.base.mAllocator.destroy(self);
+    }
+
+    pub fn findInvaderToSeek(self: *Self) void {
+        // Here's the deal, I'm not happy with this for a few reasons:
+        // 1. It peeks directly into the hives arraylist, bad for encapsulation.
+        // 2. It's always targeting the 0-index invader (for all missiles!)
+        //    The reason is due to how the hive's arraylist culls items, we don't want to hold on to a stale pointer with swapRemove
+        //    So, for now, we always target the 0th invader when we have at least 1 invader left.
+        if (state.mGame.mHive.mInvaders.items.len > 0) {
+            self.mInvaderToSeek = &state.mGame.mHive.mInvaders.items[0];
+            return;
+        }
+
+        // When no invaders are left, we can't seek to anything so set it to null.
+        self.mInvaderToSeek = null;
     }
 
     pub fn update(ptr: *anyopaque) anyerror!void {
@@ -224,7 +243,13 @@ pub const MissileProj = struct {
 
         // Move towards target: (mouse pos for now)
         const myPos = c.Vector2{ .x = self.base.mX, .y = self.base.mY };
-        const target = c.GetMousePosition();
+
+        // Technically target should never be mouse position, but this is how we're testing it.
+        var target = c.GetMousePosition();
+        if (self.mInvaderToSeek) |invdr| {
+            target = .{ .x = invdr.mX, .y = invdr.mY };
+        }
+
         const maxDist: f32 = self.mSpeed * c.GetFrameTime();
         const resultVec = c.Vector2MoveTowards(
             myPos,
