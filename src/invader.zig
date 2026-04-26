@@ -22,7 +22,15 @@ pub const InvaderState = enum(u8) {
     Marked, // Hit at least once, marked and vulnerable.
 };
 
+var montonicInvaderId: usize = 0;
+
+pub fn newID() usize {
+    defer montonicInvaderId += 1;
+    return montonicInvaderId;
+}
+
 pub const Invader = struct {
+    mID: usize,
     mX: f32 = 0,
     mY: f32 = 0,
     mHits: usize = 2,

@@ -51,12 +51,21 @@ pub fn build(b: *std.Build) void {
     exe.root_module.linkFramework("GLUT", .{});
     exe.root_module.linkFramework("OpenGL", .{});
 
+    // zigimg dependency.
     const zigimg_dependency = b.dependency("zigimg", .{
         .target = target,
         .optimize = optimize,
     });
 
     exe.root_module.addImport("zigimg", zigimg_dependency.module("zigimg"));
+
+    // ziglangset dependency.
+    const ziglangset_dependency = b.dependency("ziglangSet", .{
+        .target = target,
+        .optimize = optimize,
+    });
+
+    exe.root_module.addImport("ziglangSet", ziglangset_dependency.module("ziglangSet"));
 
     // This declares intent for the executable to be installed into the
     // standard location when the user invokes the "install" step (the default

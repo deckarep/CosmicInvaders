@@ -43,7 +43,7 @@ even diverge or change some aspects of the game such as the graphics, enemies, s
 * Currently only tested and built on MacOS
 * Requires zlib: `brew install zlib`
 * Requires Zig 0.16.0 or higher to build
-* Requires Raylib 5.5 or higher to build (currently vendored in repo for MacOS)
+* Requires Raylib 6.0 or higher to build (currently vendored in repo for MacOS)
 * Depends on zigimg (should be downloaded automatically)
 * Runnning: `zig build run`
 

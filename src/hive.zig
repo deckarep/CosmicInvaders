@@ -1,4 +1,5 @@
 const std = @import("std");
+const set = @import("ziglangSet");
 const state = @import("game_state.zig");
 const conf = @import("conf.zig");
 const res = @import("resources.zig");
@@ -30,6 +31,7 @@ pub const InvaderSwaps = struct {
 pub const Hive = struct {
     mAllocator: std.mem.Allocator,
     mInvaders: std.ArrayList(inv.Invader) = undefined,
+    mActiveInvaders: set.Set(usize) = undefined,
     mState: HiveState = .Scanning,
     mRows: usize = 1,
 
@@ -54,6 +56,7 @@ pub const Hive = struct {
     pub fn init(self: *Self) !void {
         // Create the empty invaders list.
         self.mInvaders = .empty;
+        self.mActiveInvaders = .empty;
     }
 
     // TODO: some kind of functions to initialize the invader count, and rows.
@@ -68,10 +71,15 @@ pub const Hive = struct {
 
         for (0..self.mRows) |y| {
             for (0..12) |x| {
+                const invID = inv.newID();
                 try self.mInvaders.append(self.mAllocator, inv.Invader{
+                    .mID = invID,
                     .mX = xOffset + ((inv.InvWidth + invXPadding) * @as(f32, @floatFromInt(x))),
                     .mY = yOffset + ((inv.InvHeight + invYPadding) * @as(f32, @floatFromInt(y))),
                 });
+
+                // track active invaders!
+                _ = try self.mActiveInvaders.add(self.mAllocator, invID);
             }
         }
 
@@ -82,6 +90,7 @@ pub const Hive = struct {
 
     pub fn deinit(self: *Self) void {
         self.mInvaders.deinit(self.mAllocator);
+        self.mActiveInvaders.deinit(self.mAllocator);
     }
 
     pub inline fn dead(self: Self) bool {
@@ -119,21 +128,23 @@ pub const Hive = struct {
 
                 switch (currInv.mDeathReason.?) {
                     .HitGround => {
-                        std.debug.print("culling invader due to hitting ground\n", .{});
+                        std.debug.print("culling invader id:{d} due to hitting ground\n", .{currInv.mID});
                         try state.mGame.spawnMiniRedFloatingScore("-1", currInv.mX, currInv.mY);
                         state.mGame.beginShake();
                     },
                     .HitWeaponStation => {
-                        std.debug.print("culling invader due to hitting a weapon station\n", .{});
+                        std.debug.print("culling invader id:{d} due to hitting a weapon station\n", .{currInv.mID});
                         try state.mGame.spawnMiniRedFloatingScore("-10", currInv.mX, currInv.mY);
                         state.mGame.beginShake();
                     },
                     .PlayerProjectile => {
+                        std.debug.print("culling invader id:{d} due to player projectile\n", .{currInv.mID});
                         try state.mGame.spawnSmallWhiteFloatingScore("+20", currInv.mX, currInv.mY);
                     },
                 }
 
                 _ = self.mInvaders.swapRemove(len - 1);
+                _ = self.mActiveInvaders.remove(currInv.mID);
                 howMany += 1;
             }
         }

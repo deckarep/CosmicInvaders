@@ -192,14 +192,15 @@ pub const AlienBullet = struct {
 pub const MissileProj = struct {
     base: BaseProjectile,
 
-    mId: usize = 0,
     mTexture: c.Texture = undefined,
     mRotation: f32 = 0.0,
     mSpeed: f32, // pixels per second.
     mExplodeCooldown: f32,
-    mInvaderToSeek: ?*inv.Invader,
-    // For now, let's just heat sick to the mouse coords.
-    //mInvTargetIdx: usize = 0,
+
+    // mInvaderIDToSeek allows us to query to the hive to see if invader is alive.
+    mInvaderIDToSeek: ?usize,
+    // mInvader is the actual pointer to the invader that is alive, and only valid if we have proven it's alive using the id.
+    mInvader: ?*inv.Invader,
 
     const Self = @This();
     const ExplosionEveryNFrames = 10;
@@ -211,7 +212,8 @@ pub const MissileProj = struct {
         missile.mSpeed = @floatFromInt(c.GetRandomValue(60, 75));
         missile.mExplodeCooldown = ExplosionEveryNFrames; // config this
         missile.mTexture = res.Resources.Projectiles.Missile;
-        missile.findInvaderToSeek();
+        missile.mInvaderIDToSeek = null;
+        missile.mInvader = null;
         return missile;
     }
 
@@ -220,19 +222,55 @@ pub const MissileProj = struct {
         self.base.mAllocator.destroy(self);
     }
 
-    pub fn findInvaderToSeek(self: *Self) void {
+    fn isTrackingInvaderActive(self: *Self, invID: ?usize) bool {
+        if (invID) |id| {
+            return state.mGame.mHive.mActiveInvaders.contains(id);
+        }
+        // It's not longer active so we must null it out.
+        self.mInvaderIDToSeek = null;
+        self.mInvader = null;
+        return false;
+    }
+
+    fn findInvaderToSeek(self: *Self) void {
         // Here's the deal, I'm not happy with this for a few reasons:
         // 1. It peeks directly into the hives arraylist, bad for encapsulation.
-        // 2. It's always targeting the 0-index invader (for all missiles!)
-        //    The reason is due to how the hive's arraylist culls items, we don't want to hold on to a stale pointer with swapRemove
-        //    So, for now, we always target the 0th invader when we have at least 1 invader left.
-        if (state.mGame.mHive.mInvaders.items.len > 0) {
-            self.mInvaderToSeek = &state.mGame.mHive.mInvaders.items[0];
+        if (state.mGame.mHive.mActiveInvaders.cardinality() > 0) {
+            // TODO: choose a random invader by choosing a random index.
+            var iter = state.mGame.mHive.mActiveInvaders.iterator();
+            var whichID: usize = 0;
+            while (iter.next()) |id| {
+                whichID = id.*;
+                break;
+            }
+            self.mInvaderIDToSeek = whichID;
+            for (state.mGame.mHive.mInvaders.items) |*i| {
+                if (i.mID == whichID) {
+                    self.mInvader = i;
+                }
+            }
             return;
         }
 
         // When no invaders are left, we can't seek to anything so set it to null.
-        self.mInvaderToSeek = null;
+        self.mInvaderIDToSeek = null;
+        self.mInvader = null;
+    }
+
+    fn seekInvader(self: *Self, defaultTarget: c.Vector2) c.Vector2 {
+        if (self.isTrackingInvaderActive(self.mInvaderIDToSeek)) {
+            const target = c.Vector2{ .x = self.mInvader.?.mX, .y = self.mInvader.?.mY };
+            return target;
+        } else {
+            // 3. If we're not, attempt to track one and use it for targeting.
+            self.findInvaderToSeek();
+            if (self.mInvaderIDToSeek) |_| {
+                const target = c.Vector2{ .x = self.mInvader.?.mX, .y = self.mInvader.?.mY };
+                return target;
+            }
+        }
+
+        return defaultTarget;
     }
 
     pub fn update(ptr: *anyopaque) anyerror!void {
@@ -244,11 +282,11 @@ pub const MissileProj = struct {
         // Move towards target: (mouse pos for now)
         const myPos = c.Vector2{ .x = self.base.mX, .y = self.base.mY };
 
-        // Technically target should never be mouse position, but this is how we're testing it.
+        // 1. For now, target starts off default to mouse position (while we're prototyping)
         var target = c.GetMousePosition();
-        if (self.mInvaderToSeek) |invdr| {
-            target = .{ .x = invdr.mX, .y = invdr.mY };
-        }
+
+        // 2. If we're already tracking an invader, let's use it for targeting.
+        target = self.seekInvader(target);
 
         const maxDist: f32 = self.mSpeed * c.GetFrameTime();
         const resultVec = c.Vector2MoveTowards(

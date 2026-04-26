@@ -29,6 +29,10 @@
             .url = "git+https://github.com/zigimg/zigimg.git#c7e81a13bff1cf4c5b7f085a8360f9d551143d40",
             .hash = "zigimg-0.1.0-8_eo2uScFwCnpzB1Y2n_jf3euDfMEeCLxJE_E5_W5BNe",
         },
+        .ziglangSet = .{
+            .url = "git+https://github.com/deckarep/ziglang-set.git#5e613cab0d540def68744eda863346957522eafa",
+            .hash = "ziglangSet-0.1.0-VUjv0hUUAQB3juxbnODL6190E_jPp0nQON7QWTU0oNwM",
+        },
     },
     .paths = .{
         "build.zig",
