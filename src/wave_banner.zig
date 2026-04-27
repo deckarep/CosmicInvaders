@@ -66,7 +66,7 @@ pub const WaveBanner = struct {
         const fontSize = 35;
         const fontSpacing = 1;
 
-        const text = try std.fmt.bufPrintZ(buf[0..], "WAVE {d}", .{self.mWaveCount + 1});
+        const text = try std.fmt.bufPrintSentinel(buf[0..], "WAVE {d}", .{self.mWaveCount + 1}, 0);
         const dims = c.MeasureTextEx(fnts.Font1, text, fontSize, fontSpacing);
 
         // Create new render texture.

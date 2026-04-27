@@ -281,7 +281,7 @@ fn genBitmapFile(path: [:0]const u8, allocator: std.mem.Allocator) !void {
     }
 
     var buf: [32]u8 = undefined;
-    const finalPath = try std.fmt.bufPrintZ(buf[0..], "{s}.png", .{path});
+    const finalPath = try std.fmt.bufPrintSentinel(buf[0..], "{s}.png", .{path}, 0);
     try img.writeToFilePath(finalPath, .{ .png = .{} });
 
     std.debug.print("image created: {s}, w:{d}, h:{d}\n", .{ finalPath, width, height });

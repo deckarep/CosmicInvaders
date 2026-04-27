@@ -57,10 +57,11 @@ pub const Resources = struct {
 
         for (1..6) |i| {
             var buf: [64]u8 = undefined;
-            const path = try std.fmt.bufPrintZ(
+            const path = try std.fmt.bufPrintSentinel(
                 buf[0..],
                 "{s}cloud{d}.mz.png",
                 .{ ROOT_PATH, i },
+                0,
             );
             Resources.Clouds[i - 1] = loadTexture(path);
         }
