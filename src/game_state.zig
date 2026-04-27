@@ -181,7 +181,7 @@ pub const GameState = struct {
                 // 2.b Find out which invader was hit.
                 var anyInvadersDead = false;
                 for (self.mHive.mInvaders.items) |*inv| {
-                    if (inv.checkHit(projBounds)) {
+                    if (inv.checkHit(&currProj)) {
                         c.PlaySound(res.Resources.Sfx.LaserHit);
                         currProj.markDead();
                     }

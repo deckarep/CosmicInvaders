@@ -13,7 +13,9 @@ pub const InvHeight = 13 * 2;
 pub const InvaderDeathReason = enum(u8) {
     HitGround,
     HitWeaponStation,
-    PlayerProjectile,
+    MissileProjectile,
+    CanonProjectile,
+    LighteningProjectile,
 };
 
 pub const InvaderState = enum(u8) {
@@ -129,8 +131,9 @@ pub const Invader = struct {
         return self.mDeathReason != null;
     }
 
-    pub fn checkHit(self: *Self, projBounds: c.Rectangle) bool {
+    pub fn checkHit(self: *Self, proj: *pj.Proj) bool {
         const invBounds = self.getBounds();
+        const projBounds = proj.getBounds();
 
         const collided = c.CheckCollisionRecs(projBounds, invBounds);
         if (collided) {
@@ -140,7 +143,12 @@ pub const Invader = struct {
             self.mState = .Damaged;
 
             if (self.mHits == 0) {
-                self.mDeathReason = .PlayerProjectile;
+                switch (proj.getKind()) {
+                    .Missile => self.mDeathReason = .MissileProjectile,
+                    .Canon => self.mDeathReason = .CanonProjectile,
+                    .Lightening => self.mDeathReason = .LighteningProjectile,
+                    else => {},
+                }
             }
         }
 

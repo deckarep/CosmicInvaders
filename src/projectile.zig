@@ -6,6 +6,15 @@ const inv = @import("invader.zig");
 const drw = @import("draw.zig");
 const state = @import("game_state.zig");
 
+pub const ProjKind = enum(u8) {
+    // Alien projectiles below
+    AlienBullet,
+    // Player projectiles below
+    Canon,
+    Missile,
+    Lightening,
+};
+
 pub const Proj = struct {
     ptr: *anyopaque,
 
@@ -14,6 +23,7 @@ pub const Proj = struct {
     drawFn: *const fn (*anyopaque) anyerror!void,
     getPosFn: *const fn (*anyopaque) c.Vector2,
     getBoundsFn: *const fn (*anyopaque) c.Rectangle,
+    getKindFn: *const fn (*anyopaque) ProjKind,
     isDeadFn: *const fn (*anyopaque) bool,
     markDeadFn: *const fn (*anyopaque) void,
 
@@ -37,6 +47,10 @@ pub const Proj = struct {
         return self.getBoundsFn(self.ptr);
     }
 
+    pub inline fn getKind(self: Proj) ProjKind {
+        return self.getKindFn(self.ptr);
+    }
+
     pub inline fn markDead(self: Proj) void {
         self.markDeadFn(self.ptr);
     }
@@ -51,11 +65,13 @@ pub const BaseProjectile = struct {
     mX: f32 = 0,
     mY: f32 = 0,
     mDead: bool,
+    mKind: ProjKind,
 
     const Self = @This();
 
-    inline fn init(self: *Self, x: f32, y: f32, allocator: std.mem.Allocator) void {
+    inline fn init(self: *Self, kind: ProjKind, x: f32, y: f32, allocator: std.mem.Allocator) void {
         self.mAllocator = allocator;
+        self.mKind = kind;
         self.mX = x;
         self.mY = y;
         self.mDead = false;
@@ -78,6 +94,10 @@ pub const BaseProjectile = struct {
     inline fn getPos(self: *Self) c.Vector2 {
         return .{ .x = self.mX, .y = self.mY };
     }
+
+    inline fn getKind(self: *Self) ProjKind {
+        return self.mKind;
+    }
 };
 
 pub const AlienBullet = struct {
@@ -88,7 +108,7 @@ pub const AlienBullet = struct {
 
     pub fn create(x: f32, y: f32, allocator: std.mem.Allocator) !*AlienBullet {
         const bullet = try allocator.create(AlienBullet);
-        bullet.base.init(x, y, allocator);
+        bullet.base.init(.AlienBullet, x, y, allocator);
         bullet.mfixedX = x; // <-- anchor around this x.
         return bullet;
     }
@@ -172,6 +192,11 @@ pub const AlienBullet = struct {
         };
     }
 
+    pub fn getKind(ptr: *anyopaque) ProjKind {
+        const self: *Self = @ptrCast(@alignCast(ptr));
+        return self.base.getKind();
+    }
+
     pub fn asProjectile(self: *Self) Proj {
         return Proj{
             .ptr = self,
@@ -182,6 +207,7 @@ pub const AlienBullet = struct {
 
             .getPosFn = getPos,
             .getBoundsFn = getBounds,
+            .getKindFn = getKind,
 
             .isDeadFn = isDead,
             .markDeadFn = markDead,
@@ -207,7 +233,7 @@ pub const MissileProj = struct {
 
     pub fn create(x: f32, y: f32, rot: f32, allocator: std.mem.Allocator) !*Self {
         const missile = try allocator.create(Self);
-        missile.base.init(x, y, allocator);
+        missile.base.init(.Missile, x, y, allocator);
         missile.mRotation = rot;
         missile.mSpeed = @floatFromInt(c.GetRandomValue(60, 75));
         missile.mExplodeCooldown = ExplosionEveryNFrames; // config this
@@ -341,6 +367,11 @@ pub const MissileProj = struct {
         return self.base.getPos();
     }
 
+    pub fn getKind(ptr: *anyopaque) ProjKind {
+        const self: *Self = @ptrCast(@alignCast(ptr));
+        return self.base.getKind();
+    }
+
     pub fn draw(ptr: *anyopaque) anyerror!void {
         const self: *Self = @ptrCast(@alignCast(ptr));
         if (self.base.isDead()) return;
@@ -412,6 +443,7 @@ pub const MissileProj = struct {
 
             .getPosFn = getPos,
             .getBoundsFn = getBounds,
+            .getKindFn = getKind,
 
             .isDeadFn = isDead,
             .markDeadFn = markDead,
@@ -426,7 +458,7 @@ pub const CanonBullet = struct {
 
     pub fn create(x: f32, y: f32, allocator: std.mem.Allocator) !*Self {
         const bullet = try allocator.create(Self);
-        bullet.base.init(x, y, allocator);
+        bullet.base.init(.Canon, x, y, allocator);
         return bullet;
     }
 
@@ -504,6 +536,11 @@ pub const CanonBullet = struct {
         };
     }
 
+    pub fn getKind(ptr: *anyopaque) ProjKind {
+        const self: *Self = @ptrCast(@alignCast(ptr));
+        return self.base.getKind();
+    }
+
     pub fn asProjectile(self: *Self) Proj {
         return Proj{
             .ptr = self,
@@ -514,6 +551,7 @@ pub const CanonBullet = struct {
 
             .getPosFn = getPos,
             .getBoundsFn = getBounds,
+            .getKindFn = getKind,
 
             .isDeadFn = isDead,
             .markDeadFn = markDead,

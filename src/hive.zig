@@ -137,9 +137,14 @@ pub const Hive = struct {
                         try state.mGame.spawnMiniRedFloatingScore("-10", currInv.mX, currInv.mY);
                         state.mGame.beginShake();
                     },
-                    .PlayerProjectile => {
+                    .LighteningProjectile, .CanonProjectile, .MissileProjectile => {
                         std.debug.print("culling invader id:{d} due to player projectile\n", .{currInv.mID});
                         try state.mGame.spawnSmallWhiteFloatingScore("+20", currInv.mX, currInv.mY);
+                        if (currInv.mDeathReason) |reason| {
+                            if (reason == .MissileProjectile) {
+                                try state.mGame.spawnFieryExplosion(currInv.mX, currInv.mY);
+                            }
+                        }
                     },
                 }
 
