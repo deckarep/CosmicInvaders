@@ -80,7 +80,10 @@ pub const GameState = struct {
         var tmp: wp.WeaponStation = undefined;
         while (true) {
             var haveCollision = false;
-            tmp = wp.WeaponStation.create(wp.WeaponStationKind.Canon);
+
+            const stationKinds = [_]wp.WeaponStationKind{ .Canon, .RocketLauncher };
+            const chosenKind = stationKinds[@as(usize, @intCast(c.GetRandomValue(0, 1)))];
+            tmp = wp.WeaponStation.create(chosenKind);
             tmp.mX = @floatFromInt(c.GetRandomValue(0, conf.WIN_WIDTH - 38));
             tmp.mY = 372;
             const tmpBounds = tmp.getBounds();
@@ -343,9 +346,13 @@ pub const GameState = struct {
     }
 
     pub fn spawnCanonBullet(self: *Self, x: f32, y: f32) !void {
+        const cBullet = try pj.CanonBullet.create(x, y, self.mAllocator);
+        const p = cBullet.asProjectile();
+        try self.mPlayerProjectiles.append(self.mAllocator, p);
+    }
+
+    pub fn spawnMissileProjectile(self: *Self, x: f32, y: f32) !void {
         const missileProj = try pj.MissileProj.create(x, y, 0.0, self.mAllocator);
-        //const cBullet = try pj.CanonBullet.create(x, y, self.mAllocator);
-        //const p = cBullet.asProjectile();
         const p = missileProj.asProjectile();
         try self.mPlayerProjectiles.append(self.mAllocator, p);
     }

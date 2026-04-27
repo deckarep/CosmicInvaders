@@ -42,6 +42,7 @@ pub const Resources = struct {
         pub var LaserFire: c.Sound = undefined;
         pub var LaserHit: c.Sound = undefined;
         pub var Explosion: c.Sound = undefined;
+        pub var Missile: c.Sound = undefined;
     };
 
     pub const Music = struct {
@@ -90,6 +91,7 @@ pub const Resources = struct {
         Resources.Sfx.LaserFire = loadSound(ROOT_PATH ++ "zoop.wav");
         Resources.Sfx.LaserHit = loadSound(ROOT_PATH ++ "laserhit.wav");
         Resources.Sfx.Explosion = loadSound(ROOT_PATH ++ "boom1.wav");
+        Resources.Sfx.Missile = loadSound(ROOT_PATH ++ "missile.wav");
     }
 
     fn loadTexture(path: [:0]const u8) c.Texture {
@@ -160,5 +162,6 @@ pub const Resources = struct {
         unloadSound(Resources.Sfx.LaserFire);
         unloadSound(Resources.Sfx.LaserHit);
         unloadSound(Resources.Sfx.Explosion);
+        unloadSound(Resources.Sfx.Missile);
     }
 };

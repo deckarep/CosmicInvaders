@@ -95,11 +95,57 @@ pub const WeaponStation = struct {
                     },
                 }
             },
-            .TeslaCoil => {
-                // TODO
-            },
             .RocketLauncher => {
-                // TODO
+                switch (self.mCondition) {
+                    .Normal => {
+                        // Should we be collapsing?
+                        if (self.mHealth <= 0) {
+                            self.mCondition = .Collapsing;
+                            return;
+                        }
+
+                        // Should we be firing?
+                        if (self.mFireCountdown > 0) self.mFireCountdown -= 1;
+                        const shouldFire = self.mFireCountdown == 0;
+                        if (shouldFire) {
+                            self.mCondition = .Firing;
+                        }
+                    },
+                    .Firing => {
+                        const x = self.mX + ((29 * 2) / 2);
+                        try state.mGame.spawnMissileProjectile(x, self.mY);
+                        // TODO: use a more appropriate sound effect instead of laser
+                        c.PlaySound(res.Resources.Sfx.Missile);
+                        self.mFireCountdown = conf.RocketLauncherCooldown;
+                        self.mFrameIdx += 1;
+                        self.mCondition = .Normal;
+                        return;
+                    },
+                    .Hit => {
+                        self.mFrameIdx = 5;
+                        self.mCondition = .Hit2;
+                        return;
+                    },
+                    .Hit2 => {
+                        self.mFrameIdx = 5;
+                        self.mCondition = .Normal;
+                        return;
+                    },
+                    .Collapsing => {},
+                    .Dead => {
+                        // Nothing for now, but once in this state, this weapon station will be reaped!
+                    },
+                }
+            },
+            .TeslaCoil => {
+                switch (self.mCondition) {
+                    .Normal => {},
+                    .Firing => {},
+                    .Hit => {},
+                    .Hit2 => {},
+                    .Collapsing => {},
+                    .Dead => {},
+                }
             },
         }
 
@@ -150,15 +196,15 @@ pub const WeaponStation = struct {
         return rect;
     }
 
-    pub fn sell(self: *Self) void {
-        _ = self;
-        // TODO: compute and return salvage value, and destroy object.
-    }
+    // pub fn sell(self: *Self) void {
+    //     _ = self;
+    //     // TODO: compute and return salvage value, and destroy object.
+    // }
 
-    pub fn repair(self: *Self) void {
-        self.mHealth = 100;
-        self.mCondition = .New;
-    }
+    // pub fn repair(self: *Self) void {
+    //     self.mHealth = 100;
+    //     self.mCondition = .Normal;
+    // }
 
     pub inline fn dead(self: Self) bool {
         return self.mCondition == .Dead;
@@ -222,6 +268,8 @@ pub const WeaponStation = struct {
     pub fn draw(self: Self) !void {
         if (self.dead()) return;
 
+        const bounds = self.getBounds();
+
         // TODO: when below some mHealth threshold, show damage animation as well.
         // Giving the user an indication that there structure will be destroyed soon!
         switch (self.mKind) {
@@ -245,8 +293,22 @@ pub const WeaponStation = struct {
                     2.0,
                 );
 
-                const bounds = self.getBounds();
+                // Draw low damage puff indicator when health is below threshold.
+                self.drawSmokePlume(bounds);
 
+                // Draw health box.
+                self.drawHealthBar(bounds);
+
+                // Draw hit box
+                c.DrawRectangleLines(
+                    @intFromFloat(bounds.x),
+                    @intFromFloat(bounds.y),
+                    @intFromFloat(bounds.width),
+                    @intFromFloat(bounds.height),
+                    c.RED,
+                );
+            },
+            .RocketLauncher => {
                 // Draw low damage puff indicator when health is below threshold.
                 self.drawSmokePlume(bounds);
 
@@ -263,9 +325,6 @@ pub const WeaponStation = struct {
                 );
             },
             .TeslaCoil => {
-                // TODO
-            },
-            .RocketLauncher => {
                 // TODO
             },
         }

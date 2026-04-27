@@ -237,8 +237,8 @@ pub const MissileProj = struct {
         // 1. It peeks directly into the hives arraylist, bad for encapsulation.
         if (state.mGame.mHive.mActiveInvaders.cardinality() > 0) {
             // TODO: choose a random invader by choosing a random index.
-            const count: c_int = @intCast(state.mGame.mHive.mActiveInvaders.capacity() - 1);
-            const randIdx: usize = @intCast(c.GetRandomValue(0, count));
+            const count: c_int = @intCast(state.mGame.mHive.mActiveInvaders.capacity());
+            const randIdx: usize = @intCast(c.GetRandomValue(0, count - 1));
             var iter = state.mGame.mHive.mActiveInvaders.iterator();
             var whichID: usize = 0;
             var idx: usize = 0;
@@ -264,18 +264,18 @@ pub const MissileProj = struct {
     }
 
     fn seekInvader(self: *Self, fallbackTarget: c.Vector2) c.Vector2 {
-        // 1. If we're already tracking an active invader, use it.
+        // 1. If we're already tracking an active invader, use its position for targeting.
         if (self.isTrackingInvaderActive(self.mInvaderIDToSeek)) {
             return .{ .x = self.mInvader.?.mX, .y = self.mInvader.?.mY };
         } else {
-            // 2. If we're not, attempt to track one and use it for targeting.
+            // 2. If we're not, attempt to track one and use its position for targeting.
             self.findInvaderToSeek();
             if (self.mInvaderIDToSeek) |_| {
                 return .{ .x = self.mInvader.?.mX, .y = self.mInvader.?.mY };
             }
         }
 
-        // 3. Otherwise just use fallback target, whatever it might be.
+        // 3. Otherwise, just use fallback target, whatever it might be.
         return fallbackTarget;
     }
 
