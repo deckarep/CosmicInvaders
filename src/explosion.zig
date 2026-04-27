@@ -84,6 +84,6 @@ pub const Explosion = struct {
         };
 
         // NOTE: Subtracting half w/h this way placement is centered for the explosion.
-        drw.drawTextureScaled(self.mX - hw, self.mY - hh, self.mTexture, view, 2.0);
+        drw.drawTextureScaled(self.mX - hw, self.mY - hh, self.mTexture, view, 2.0, c.WHITE);
     }
 };

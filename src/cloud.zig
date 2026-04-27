@@ -43,6 +43,6 @@ pub const Cloud = struct {
             .height = @floatFromInt(self.mTexture.height),
         };
 
-        drw.drawTextureScaled(self.mX, self.mY, self.mTexture, view, 2.0);
+        drw.drawTextureScaled(self.mX, self.mY, self.mTexture, view, 2.0, c.WHITE);
     }
 };

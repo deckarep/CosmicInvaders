@@ -250,7 +250,7 @@ pub const GameState = struct {
     pub fn draw(self: Self) !void {
         // Draw background.
         const view = c.Rectangle{ .x = 0, .y = 0, .width = 320, .height = 240 };
-        drw.drawTextureScaled(0, 0, res.Resources.Background, view, 2.0);
+        drw.drawTextureScaled(0, 0, res.Resources.Background, view, 2.0, c.WHITE);
 
         // Draw clouds.
         for (self.mClouds.items) |*cloud| {

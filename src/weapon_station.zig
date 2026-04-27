@@ -241,6 +241,7 @@ pub const WeaponStation = struct {
             res.Resources.Effects.Puff2,
             view,
             2.0,
+            c.WHITE,
         );
     }
 
@@ -291,6 +292,7 @@ pub const WeaponStation = struct {
                     res.Resources.Canon,
                     view,
                     2.0,
+                    c.WHITE,
                 );
 
                 // Draw low damage puff indicator when health is below threshold.

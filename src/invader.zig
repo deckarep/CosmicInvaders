@@ -98,6 +98,7 @@ pub const Invader = struct {
             res.Resources.Invader1,
             view,
             scale,
+            c.WHITE,
         );
 
         // Debug inv bounds.

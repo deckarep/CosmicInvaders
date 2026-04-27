@@ -127,7 +127,7 @@ pub const AlienBullet = struct {
         const view = c.Rectangle{ .x = xOffset, .y = yOffset, .width = 5, .height = 5 };
         // NOTE: to call the interface getPos we have to pass in the raw ptr. Yechy.
         const prjPos = getPos(ptr);
-        drw.drawTextureScaled(prjPos.x, prjPos.y, res.Resources.AlienBullet, view, 2.0);
+        drw.drawTextureScaled(prjPos.x, prjPos.y, res.Resources.AlienBullet, view, 2.0, c.WHITE);
 
         // Draw red bounding box.
         self.debug_draw(w, h);
@@ -373,7 +373,7 @@ pub const MissileProj = struct {
         };
 
         const scale = 2;
-        drw.drawTextureScaled(self.base.mX, self.base.mY, self.mTexture, view, scale);
+        drw.drawTextureScaled(self.base.mX, self.base.mY, self.mTexture, view, scale, c.WHITE);
 
         //std.debug.print("rot => {d}\n", .{self.mRotation});
 
@@ -460,7 +460,7 @@ pub const CanonBullet = struct {
             .height = @floatFromInt(th),
         };
 
-        drw.drawTextureScaled(self.base.mX, self.base.mY, selectedTexture, view, 2.0);
+        drw.drawTextureScaled(self.base.mX, self.base.mY, selectedTexture, view, 2.0, c.WHITE);
 
         // Draw red bounding box.
         const scale = 2;

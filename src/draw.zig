@@ -1,7 +1,7 @@
 const std = @import("std");
 const c = @import("c");
 
-pub fn drawTextureScaled(x: f32, y: f32, texture: c.Texture, view: c.Rectangle, scale: f32) void {
+pub fn drawTextureScaled(x: f32, y: f32, texture: c.Texture, view: c.Rectangle, scale: f32, color: c.Color) void {
     const src = c.Rectangle{
         .x = view.x,
         .y = view.y,
@@ -21,7 +21,7 @@ pub fn drawTextureScaled(x: f32, y: f32, texture: c.Texture, view: c.Rectangle, 
         dst,
         c.Vector2{ .x = 0, .y = 0 },
         0,
-        c.WHITE,
+        color,
     );
 }
 
