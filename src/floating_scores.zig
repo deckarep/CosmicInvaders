@@ -9,8 +9,7 @@ pub const ScoreStyle = enum {
 };
 
 pub const FloatingScore = struct {
-    mX: f32 = 0,
-    mY: f32 = 0,
+    mPos: c.Vector2 = .{ .x = 0, .y = 0 },
     mLifetime: usize = 60,
     mText: [:0]const u8,
     mKind: ScoreStyle,
@@ -19,8 +18,10 @@ pub const FloatingScore = struct {
 
     pub fn create(text: [:0]const u8, x: f32, y: f32, kind: ScoreStyle) Self {
         return Self{
-            .mX = x,
-            .mY = y,
+            .mPos = .{
+                .x = x,
+                .y = y,
+            },
             .mText = text,
             .mKind = kind,
         };
@@ -38,8 +39,8 @@ pub const FloatingScore = struct {
         switch (self.mKind) {
             .MiniRed, .SmallWhite => {
                 const movement = 4.0 * c.GetFrameTime();
-                self.mY -= movement;
-                self.mX += movement;
+                self.mPos.x += movement;
+                self.mPos.y -= movement;
             },
         }
     }
@@ -52,7 +53,7 @@ pub const FloatingScore = struct {
                 c.DrawTextEx(
                     fnts.Font1,
                     self.mText,
-                    .{ .x = self.mX, .y = self.mY },
+                    .{ .x = self.mPos.x, .y = self.mPos.y },
                     10,
                     0,
                     conf.FontColor.Red,
@@ -62,7 +63,7 @@ pub const FloatingScore = struct {
                 c.DrawTextEx(
                     fnts.Font1,
                     self.mText,
-                    .{ .x = self.mX, .y = self.mY },
+                    .{ .x = self.mPos.x, .y = self.mPos.y },
                     10,
                     0,
                     c.WHITE,
