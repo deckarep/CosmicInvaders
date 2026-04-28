@@ -4,6 +4,7 @@ const state = @import("game_state.zig");
 const conf = @import("conf.zig");
 const res = @import("resources.zig");
 const pj = @import("projectile.zig");
+const pji = @import("projectile_invader.zig");
 const drw = @import("draw.zig");
 const esngs = @import("easings.zig");
 const inv = @import("invader.zig");
@@ -394,7 +395,7 @@ pub const Hive = struct {
                 const invTotal = self.mInvaders.items.len - 1;
                 const randInvIdx: usize = @intCast(c.GetRandomValue(0, @intCast(invTotal)));
                 const selectedInv = self.mInvaders.items[randInvIdx];
-                const p = try pj.AlienBullet.create(selectedInv.mPos.x, selectedInv.mPos.y, self.mAllocator);
+                const p = try pji.InvaderBullet.create(selectedInv.mPos.x, selectedInv.mPos.y, self.mAllocator);
                 const bullet = p.asProjectile();
                 try state.mGame.mEnemyProjectiles.append(self.mAllocator, bullet);
 

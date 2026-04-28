@@ -1,6 +1,8 @@
 const std = @import("std");
 const hive = @import("hive.zig");
 const pj = @import("projectile.zig");
+const pjc = @import("projectile_canon.zig");
+const pjm = @import("projectile_missile.zig");
 const exp = @import("explosion.zig");
 const cld = @import("cloud.zig");
 const conf = @import("conf.zig");
@@ -346,13 +348,13 @@ pub const GameState = struct {
     }
 
     pub fn spawnCanonBullet(self: *Self, x: f32, y: f32) !void {
-        const cBullet = try pj.CanonBullet.create(x, y, self.mAllocator);
+        const cBullet = try pjc.CanonBullet.create(x, y, self.mAllocator);
         const p = cBullet.asProjectile();
         try self.mPlayerProjectiles.append(self.mAllocator, p);
     }
 
     pub fn spawnMissileProjectile(self: *Self, x: f32, y: f32) !void {
-        const missileProj = try pj.MissileProj.create(x, y, 0.0, self.mAllocator);
+        const missileProj = try pjm.MissileProj.create(x, y, 0.0, self.mAllocator);
         const p = missileProj.asProjectile();
         try self.mPlayerProjectiles.append(self.mAllocator, p);
     }
