@@ -249,64 +249,36 @@ pub const MissileProj = struct {
 
     fn isTrackingInvaderActive(self: *Self, invID: ?usize) bool {
         if (invID) |id| {
-            return state.mGame.mHive.mActiveInvaders.contains(id);
+            return state.mGame.mHive.isInvaderIdActive(id);
         }
         // It's not longer active so we must null it out.
         self.mInvaderIDToSeek = null;
         return false;
     }
 
-    // fetchInvaderByID when provided an active invader, returns an pointer to the actual invader otherwise null if not found.
-    fn fetchInvaderByID(_: Self, invID: ?usize) ?*inv.Invader {
-        if (invID == null) {
-            return null;
-        }
-        for (state.mGame.mHive.mInvaders.items) |*i| {
-            if (i.mID == invID.?) {
-                return i;
-            }
-        }
-
-        // We should never get here if we've provided an active id, it's a bug otherwise.
-        unreachable;
-    }
-
     fn findInvaderToSeek(self: *Self) void {
-        // Here's the deal, I'm not happy with this for a few reasons:
-        // 1. It peeks directly into the hives arraylist, bad for encapsulation.
-        const activeInvCount: c_int = @intCast(state.mGame.mHive.mActiveInvaders.cardinality());
-        if (activeInvCount > 0) {
-            // TODO: choose a random invader by choosing a random index.
-            const randIdx: usize = @intCast(c.GetRandomValue(0, activeInvCount - 1));
-            var iter = state.mGame.mHive.mActiveInvaders.iterator();
-            var whichID: usize = 0;
-            var idx: usize = 0;
-            while (iter.next()) |id| {
-                whichID = id.*;
-                if (randIdx == idx) {
-                    break;
-                }
-                idx += 1;
-            }
-            self.mInvaderIDToSeek = whichID;
+        const id = state.mGame.mHive.getRandomInvaderId();
+        if (id) |i| {
+            self.mInvaderIDToSeek = i;
             return;
         }
 
-        // When no invaders are left, we can't seek to anything so set it to null.
         self.mInvaderIDToSeek = null;
     }
 
     fn seekInvader(self: *Self, fallbackTarget: c.Vector2) c.Vector2 {
+        const hive = &state.mGame.mHive;
+
         // 1. If we're already tracking an active invader, use its position for targeting.
         if (self.isTrackingInvaderActive(self.mInvaderIDToSeek)) {
-            if (self.fetchInvaderByID(self.mInvaderIDToSeek)) |i| {
+            if (hive.getInvaderById(self.mInvaderIDToSeek)) |i| {
                 return .{ .x = i.mX, .y = i.mY };
             }
         } else {
             // 2. If we're not, attempt to track one and use its position for targeting.
             self.findInvaderToSeek();
             if (self.mInvaderIDToSeek) |invID| {
-                const i = self.fetchInvaderByID(invID).?;
+                const i = hive.getInvaderById(invID).?;
                 return .{ .x = i.mX, .y = i.mY };
             }
         }

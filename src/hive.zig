@@ -117,6 +117,45 @@ pub const Hive = struct {
         self.mInvaderSwaps.bY = self.mInvaderSwaps.b.?.mY;
     }
 
+    pub fn isInvaderIdActive(self: Self, id: ?usize) bool {
+        if (id) |i| {
+            return self.mActiveInvaders.contains(i);
+        }
+        return false;
+    }
+
+    pub fn getInvaderById(self: Self, id: ?usize) ?*inv.Invader {
+        if (id) |i| {
+            if (self.isInvaderIdActive(i)) {
+                for (self.mInvaders.items) |*invdr| {
+                    if (invdr.mID == i) {
+                        return invdr;
+                    }
+                }
+            }
+        }
+        return null;
+    }
+
+    pub fn getRandomInvaderId(self: Self) ?usize {
+        const activeCount: c_int = @intCast(self.mActiveInvaders.cardinality());
+        if (activeCount > 0) {
+            const randIdx: usize = @intCast(c.GetRandomValue(0, activeCount - 1));
+            var iter = self.mActiveInvaders.iterator();
+            var selectedId: usize = 0;
+            var idx: usize = 0;
+            while (iter.next()) |id| {
+                selectedId = id.*;
+                if (randIdx == idx) {
+                    break;
+                }
+                idx += 1;
+            }
+            return selectedId;
+        }
+        return null;
+    }
+
     pub fn cullInvaders(self: *Self) !void {
         var howMany: usize = 0;
         var len = self.mInvaders.items.len;
