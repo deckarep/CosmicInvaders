@@ -167,17 +167,17 @@ pub const Hive = struct {
                 switch (currInv.mDeathReason.?) {
                     .HitGround => {
                         std.debug.print("culling invader id:{d} due to hitting ground\n", .{currInv.mID});
-                        try state.mGame.spawnMiniRedFloatingScore("-1", currInv.mPos.x, currInv.mPos.y);
+                        try state.mGame.spawnMiniRedFloatingScore("-1", currInv.mPos);
                         state.mGame.beginShake();
                     },
                     .HitWeaponStation => {
                         std.debug.print("culling invader id:{d} due to hitting a weapon station\n", .{currInv.mID});
-                        try state.mGame.spawnMiniRedFloatingScore("-10", currInv.mPos.x, currInv.mPos.y);
+                        try state.mGame.spawnMiniRedFloatingScore("-10", currInv.mPos);
                         state.mGame.beginShake();
                     },
                     .LighteningProjectile, .CanonProjectile, .MissileProjectile => {
                         std.debug.print("culling invader id:{d} due to player projectile\n", .{currInv.mID});
-                        try state.mGame.spawnSmallWhiteFloatingScore("+20", currInv.mPos.x, currInv.mPos.y);
+                        try state.mGame.spawnSmallWhiteFloatingScore("+20", currInv.mPos);
                         if (currInv.mDeathReason) |reason| {
                             if (reason == .MissileProjectile) {
                                 try state.mGame.spawnFieryExplosion(currInv.mPos);
@@ -391,7 +391,7 @@ pub const Hive = struct {
                 }
             },
             .Attack => {
-                // Choose random invader to attack.
+                // Select a random invader that will attack.
                 const invTotal = self.mInvaders.items.len - 1;
                 const randInvIdx: usize = @intCast(c.GetRandomValue(0, @intCast(invTotal)));
                 const selectedInv = self.mInvaders.items[randInvIdx];

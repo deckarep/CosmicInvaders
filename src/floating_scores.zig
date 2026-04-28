@@ -16,12 +16,9 @@ pub const FloatingScore = struct {
 
     const Self = @This();
 
-    pub fn create(text: [:0]const u8, x: f32, y: f32, kind: ScoreStyle) Self {
+    pub fn create(text: [:0]const u8, pos: c.Vector2, kind: ScoreStyle) Self {
         return Self{
-            .mPos = .{
-                .x = x,
-                .y = y,
-            },
+            .mPos = pos,
             .mText = text,
             .mKind = kind,
         };

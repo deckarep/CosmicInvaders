@@ -329,20 +329,18 @@ pub const GameState = struct {
         try self.mInplaceExplosions.append(self.mAllocator, exp.Explosion.create(pos, 8, res.Resources.Effects.Puff2));
     }
 
-    pub fn spawnMiniRedFloatingScore(self: *Self, text: [:0]const u8, x: f32, y: f32) !void {
+    pub fn spawnMiniRedFloatingScore(self: *Self, text: [:0]const u8, pos: c.Vector2) !void {
         try self.mFloatingScores.append(self.mAllocator, fls.FloatingScore.create(
             text,
-            x,
-            y,
+            pos,
             fls.ScoreStyle.MiniRed,
         ));
     }
 
-    pub fn spawnSmallWhiteFloatingScore(self: *Self, text: [:0]const u8, x: f32, y: f32) !void {
+    pub fn spawnSmallWhiteFloatingScore(self: *Self, text: [:0]const u8, pos: c.Vector2) !void {
         try self.mFloatingScores.append(self.mAllocator, fls.FloatingScore.create(
             text,
-            x,
-            y,
+            pos,
             fls.ScoreStyle.SmallWhite,
         ));
     }
