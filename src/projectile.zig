@@ -221,25 +221,24 @@ pub const MissileProj = struct {
     mTexture: c.Texture = undefined,
     mRotation: f32 = 0.0,
     mSpeed: f32, // pixels per second.
-    mExplodeCooldown: f32,
+    mPlumeCooldown: f32,
 
     // mInvaderIDToSeek allows us to query to the hive to see if invader is alive.
     mInvaderIDToSeek: ?usize,
     // mInvader is the actual pointer to the invader that is alive, and only valid if we have proven it's alive using the id.
-    mInvader: ?*inv.Invader,
+    //mInvader: ?*inv.Invader,
 
     const Self = @This();
-    const ExplosionEveryNFrames = 10;
+    const PlumeEveryNFrames = 10;
 
     pub fn create(x: f32, y: f32, rot: f32, allocator: std.mem.Allocator) !*Self {
         const missile = try allocator.create(Self);
         missile.base.init(.Missile, x, y, allocator);
         missile.mRotation = rot;
         missile.mSpeed = @floatFromInt(c.GetRandomValue(60, 75));
-        missile.mExplodeCooldown = ExplosionEveryNFrames; // config this
+        missile.mPlumeCooldown = PlumeEveryNFrames; // config this
         missile.mTexture = res.Resources.Projectiles.Missile;
         missile.mInvaderIDToSeek = null;
-        missile.mInvader = null;
         return missile;
     }
 
@@ -254,17 +253,31 @@ pub const MissileProj = struct {
         }
         // It's not longer active so we must null it out.
         self.mInvaderIDToSeek = null;
-        self.mInvader = null;
         return false;
+    }
+
+    // fetchInvaderByID when provided an active invader, returns an pointer to the actual invader otherwise null if not found.
+    fn fetchInvaderByID(_: Self, invID: ?usize) ?*inv.Invader {
+        if (invID == null) {
+            return null;
+        }
+        for (state.mGame.mHive.mInvaders.items) |*i| {
+            if (i.mID == invID.?) {
+                return i;
+            }
+        }
+
+        // We should never get here if we've provided an active id, it's a bug otherwise.
+        unreachable;
     }
 
     fn findInvaderToSeek(self: *Self) void {
         // Here's the deal, I'm not happy with this for a few reasons:
         // 1. It peeks directly into the hives arraylist, bad for encapsulation.
-        if (state.mGame.mHive.mActiveInvaders.cardinality() > 0) {
+        const activeInvCount: c_int = @intCast(state.mGame.mHive.mActiveInvaders.cardinality());
+        if (activeInvCount > 0) {
             // TODO: choose a random invader by choosing a random index.
-            const count: c_int = @intCast(state.mGame.mHive.mActiveInvaders.capacity());
-            const randIdx: usize = @intCast(c.GetRandomValue(0, count - 1));
+            const randIdx: usize = @intCast(c.GetRandomValue(0, activeInvCount - 1));
             var iter = state.mGame.mHive.mActiveInvaders.iterator();
             var whichID: usize = 0;
             var idx: usize = 0;
@@ -276,28 +289,25 @@ pub const MissileProj = struct {
                 idx += 1;
             }
             self.mInvaderIDToSeek = whichID;
-            for (state.mGame.mHive.mInvaders.items) |*i| {
-                if (i.mID == whichID) {
-                    self.mInvader = i;
-                }
-            }
             return;
         }
 
         // When no invaders are left, we can't seek to anything so set it to null.
         self.mInvaderIDToSeek = null;
-        self.mInvader = null;
     }
 
     fn seekInvader(self: *Self, fallbackTarget: c.Vector2) c.Vector2 {
         // 1. If we're already tracking an active invader, use its position for targeting.
         if (self.isTrackingInvaderActive(self.mInvaderIDToSeek)) {
-            return .{ .x = self.mInvader.?.mX, .y = self.mInvader.?.mY };
+            if (self.fetchInvaderByID(self.mInvaderIDToSeek)) |i| {
+                return .{ .x = i.mX, .y = i.mY };
+            }
         } else {
             // 2. If we're not, attempt to track one and use its position for targeting.
             self.findInvaderToSeek();
-            if (self.mInvaderIDToSeek) |_| {
-                return .{ .x = self.mInvader.?.mX, .y = self.mInvader.?.mY };
+            if (self.mInvaderIDToSeek) |invID| {
+                const i = self.fetchInvaderByID(invID).?;
+                return .{ .x = i.mX, .y = i.mY };
             }
         }
 
@@ -342,13 +352,13 @@ pub const MissileProj = struct {
         self.mRotation = angleDeg - 90; // subtract 90 to fix orientation.
         self.mRotation = @mod(self.mRotation, 360.0);
 
-        if (self.mExplodeCooldown > 0) {
-            self.mExplodeCooldown -= 1;
+        if (self.mPlumeCooldown > 0) {
+            self.mPlumeCooldown -= 1;
         }
 
-        if (self.mExplodeCooldown == 0) {
+        if (self.mPlumeCooldown == 0) {
             try state.mGame.spawnPuff2Explosion(myPos.x + 4, myPos.y + 4);
-            self.mExplodeCooldown = ExplosionEveryNFrames;
+            self.mPlumeCooldown = PlumeEveryNFrames;
         }
     }
 
