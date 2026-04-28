@@ -62,8 +62,7 @@ pub const Proj = struct {
 
 pub const BaseProjectile = struct {
     mAllocator: std.mem.Allocator,
-    mX: f32 = 0,
-    mY: f32 = 0,
+    mPos: c.Vector2,
     mDead: bool,
     mKind: ProjKind,
 
@@ -72,15 +71,21 @@ pub const BaseProjectile = struct {
     inline fn init(self: *Self, kind: ProjKind, x: f32, y: f32, allocator: std.mem.Allocator) void {
         self.mAllocator = allocator;
         self.mKind = kind;
-        self.mX = x;
-        self.mY = y;
+        self.mPos = .{ .x = x, .y = y };
         self.mDead = false;
     }
 
     inline fn update(self: *Self) void {
         // Check when out of bounds.
-        if (self.mY < 0 or self.mY > conf.WIN_HEIGHT) self.mDead = true;
-        if (self.mX < 0 or self.mX > conf.WIN_WIDTH) self.mDead = true;
+        const screenRect = c.Rectangle{
+            .x = 0,
+            .y = 0,
+            .width = conf.WIN_WIDTH,
+            .height = conf.WIN_HEIGHT,
+        };
+        if (!c.CheckCollisionPointRec(self.mPos, screenRect)) {
+            self.mDead = true;
+        }
     }
 
     inline fn markDead(self: *Self) void {
@@ -92,7 +97,7 @@ pub const BaseProjectile = struct {
     }
 
     inline fn getPos(self: *Self) c.Vector2 {
-        return .{ .x = self.mX, .y = self.mY };
+        return self.mPos;
     }
 
     inline fn getKind(self: *Self) ProjKind {
@@ -124,11 +129,12 @@ pub const AlienBullet = struct {
 
         self.base.update();
 
-        self.base.mY += conf.EnemyProjectileYSpeed;
+        self.base.mPos.y += conf.EnemyProjectileYSpeed;
 
         const amplitude = 30.0;
         const frequency = 1.0 / 15.0; // adjust this to get the desired period
-        self.base.mX = self.mfixedX + amplitude * @sin(@as(f32, @floatFromInt(state.mGame.mTicks)) * frequency);
+
+        self.base.mPos.x = self.mfixedX + amplitude * @sin(@as(f32, @floatFromInt(state.mGame.mTicks)) * frequency);
     }
 
     pub fn draw(ptr: *anyopaque) anyerror!void {
@@ -156,8 +162,8 @@ pub const AlienBullet = struct {
     fn debug_draw(self: Self, w: comptime_int, h: comptime_int) void {
         const scale = 2;
         c.DrawRectangleLines(
-            @intFromFloat(self.base.mX),
-            @intFromFloat(self.base.mY),
+            @intFromFloat(self.base.mPos.x),
+            @intFromFloat(self.base.mPos.y),
             w * scale,
             h * scale,
             c.RED,
@@ -185,8 +191,8 @@ pub const AlienBullet = struct {
         const scale = 2.0;
 
         return c.Rectangle{
-            .x = self.base.mX,
-            .y = self.base.mY,
+            .x = self.base.mPos.x,
+            .y = self.base.mPos.y,
             .width = @as(f32, @floatFromInt(res.Resources.AlienBullet.width)) * scale,
             .height = @as(f32, @floatFromInt(res.Resources.AlienBullet.height)) * scale,
         };
@@ -225,8 +231,6 @@ pub const MissileProj = struct {
 
     // mInvaderIDToSeek allows us to query to the hive to see if invader is alive.
     mInvaderIDToSeek: ?usize,
-    // mInvader is the actual pointer to the invader that is alive, and only valid if we have proven it's alive using the id.
-    //mInvader: ?*inv.Invader,
 
     const Self = @This();
     const PlumeEveryNFrames = 10;
@@ -294,7 +298,7 @@ pub const MissileProj = struct {
         self.base.update();
 
         // Move towards target: (mouse pos for now)
-        const myPos = c.Vector2{ .x = self.base.mX, .y = self.base.mY };
+        const myPos = self.base.mPos;
 
         // 1. For now, target starts off default to mouse position (while we're prototyping)
         var target = c.GetMousePosition();
@@ -309,8 +313,7 @@ pub const MissileProj = struct {
             maxDist,
         );
 
-        self.base.mX = resultVec.x;
-        self.base.mY = resultVec.y;
+        self.base.mPos = resultVec;
 
         // Orient towards target.
         const dir = c.Vector2{
@@ -386,14 +389,14 @@ pub const MissileProj = struct {
         };
 
         const scale = 2;
-        drw.drawTextureScaled(self.base.mX, self.base.mY, self.mTexture, view, scale, c.WHITE);
+        drw.drawTextureScaled(self.base.mPos.x, self.base.mPos.y, self.mTexture, view, scale, c.WHITE);
 
         //std.debug.print("rot => {d}\n", .{self.mRotation});
 
         // Draw red bounding box.
         c.DrawRectangleLines(
-            @intFromFloat(self.base.mX),
-            @intFromFloat(self.base.mY),
+            @intFromFloat(self.base.mPos.x),
+            @intFromFloat(self.base.mPos.y),
             celw * scale,
             celh * scale,
             c.RED,
@@ -408,8 +411,8 @@ pub const MissileProj = struct {
         const scale = 2.0;
 
         return c.Rectangle{
-            .x = self.base.mX,
-            .y = self.base.mY,
+            .x = self.base.mPos.x,
+            .y = self.base.mPos.y,
             .width = tw * scale,
             .height = th * scale,
         };
@@ -455,7 +458,7 @@ pub const CanonBullet = struct {
 
         self.base.update();
 
-        self.base.mY -= 6;
+        self.base.mPos.y -= 6;
     }
 
     pub fn draw(ptr: *anyopaque) anyerror!void {
@@ -474,13 +477,13 @@ pub const CanonBullet = struct {
             .height = @floatFromInt(th),
         };
 
-        drw.drawTextureScaled(self.base.mX, self.base.mY, selectedTexture, view, 2.0, c.WHITE);
+        drw.drawTextureScaled(self.base.mPos.x, self.base.mPos.y, selectedTexture, view, 2.0, c.WHITE);
 
         // Draw red bounding box.
         const scale = 2;
         c.DrawRectangleLines(
-            @intFromFloat(self.base.mX),
-            @intFromFloat(self.base.mY),
+            @intFromFloat(self.base.mPos.x),
+            @intFromFloat(self.base.mPos.y),
             tw * scale,
             th * scale,
             c.RED,
@@ -511,8 +514,8 @@ pub const CanonBullet = struct {
         const scale = 2.0;
 
         return c.Rectangle{
-            .x = self.base.mX,
-            .y = self.base.mY,
+            .x = self.base.mPos.x,
+            .y = self.base.mPos.y,
             .width = tw * scale,
             .height = th * scale,
         };
