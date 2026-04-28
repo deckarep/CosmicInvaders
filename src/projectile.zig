@@ -332,7 +332,7 @@ pub const MissileProj = struct {
         }
 
         if (self.mPlumeCooldown == 0) {
-            try state.mGame.spawnPuff2Explosion(myPos.x + 4, myPos.y + 4);
+            try state.mGame.spawnPuff2Explosion(.{ .x = myPos.x + 4, .y = myPos.y + 4 });
             self.mPlumeCooldown = PlumeEveryNFrames;
         }
     }

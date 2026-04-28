@@ -86,7 +86,7 @@ pub const WeaponStation = struct {
                         const wsBounds = self.getBounds();
                         const x = c.GetRandomValue(0, @intFromFloat(wsBounds.width));
                         const y = c.GetRandomValue(0, @intFromFloat(wsBounds.height));
-                        try state.mGame.spawnFieryExplosion(self.mX + @as(f32, @floatFromInt(x)), self.mY + @as(f32, @floatFromInt(y)));
+                        try state.mGame.spawnFieryExplosion(.{ .x = self.mX + @as(f32, @floatFromInt(x)), .y = self.mY + @as(f32, @floatFromInt(y)) });
                         state.mGame.beginShake();
                         self.mCondition = .Dead;
                     },

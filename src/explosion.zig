@@ -17,12 +17,9 @@ pub const Explosion = struct {
 
     const Self = @This();
 
-    pub fn create(x: f32, y: f32, totalFrames: usize, texture: c.Texture) Self {
+    pub fn create(pos: c.Vector2, totalFrames: usize, texture: c.Texture) Self {
         return Self{
-            .mPos = .{
-                .x = x,
-                .y = y,
-            },
+            .mPos = pos,
             .mTotalFrames = totalFrames,
             .mTexture = texture,
         };

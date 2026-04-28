@@ -161,7 +161,7 @@ pub const Hive = struct {
             const currInv = self.mInvaders.items[len - 1];
             if (currInv.dead()) {
                 // When invader is dead, spawn a poof explosion as well as a -1 red mini score.
-                try state.mGame.spawnPoofExplosion(currInv.mPos.x, currInv.mPos.y);
+                try state.mGame.spawnPoofExplosion(currInv.mPos);
 
                 switch (currInv.mDeathReason.?) {
                     .HitGround => {
@@ -179,7 +179,7 @@ pub const Hive = struct {
                         try state.mGame.spawnSmallWhiteFloatingScore("+20", currInv.mPos.x, currInv.mPos.y);
                         if (currInv.mDeathReason) |reason| {
                             if (reason == .MissileProjectile) {
-                                try state.mGame.spawnFieryExplosion(currInv.mPos.x, currInv.mPos.y);
+                                try state.mGame.spawnFieryExplosion(currInv.mPos);
                                 // TODO: perhaps explosion should be responsible for dispatching it's own sound effect???
                                 c.PlaySound(res.Resources.Sfx.Explosion);
                             }
