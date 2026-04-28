@@ -33,8 +33,7 @@ pub fn newID() usize {
 
 pub const Invader = struct {
     mID: usize,
-    mX: f32 = 0,
-    mY: f32 = 0,
+    mPos: c.Vector2,
     mHits: usize = 2,
 
     mFlickerCount: usize = FlickerFrames,
@@ -95,8 +94,8 @@ pub const Invader = struct {
         };
 
         drw.drawTextureScaled(
-            self.mX,
-            self.mY,
+            self.mPos.x,
+            self.mPos.y,
             res.Resources.Invader1,
             view,
             scale,
@@ -115,13 +114,13 @@ pub const Invader = struct {
     }
 
     pub inline fn getPos(self: Self) c.Vector2 {
-        return .{ .x = self.mX, .y = self.mY };
+        return self.mPos;
     }
 
     pub inline fn getBounds(self: Self) c.Rectangle {
         return c.Rectangle{
-            .x = self.mX,
-            .y = self.mY,
+            .x = self.mPos.x,
+            .y = self.mPos.y,
             .width = InvWidth,
             .height = InvHeight,
         };

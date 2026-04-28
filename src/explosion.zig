@@ -9,8 +9,7 @@ pub const ExplosionKind = enum {
 
 pub const Explosion = struct {
     mKind: ExplosionKind = .Inplace,
-    mX: f32,
-    mY: f32,
+    mPos: c.Vector2,
     mTexture: c.Texture,
     mTotalFrames: usize,
     mCurrentFrame: usize = 0,
@@ -20,8 +19,10 @@ pub const Explosion = struct {
 
     pub fn create(x: f32, y: f32, totalFrames: usize, texture: c.Texture) Self {
         return Self{
-            .mX = x,
-            .mY = y,
+            .mPos = .{
+                .x = x,
+                .y = y,
+            },
             .mTotalFrames = totalFrames,
             .mTexture = texture,
         };
@@ -40,7 +41,7 @@ pub const Explosion = struct {
 
         switch (self.mKind) {
             .Inplace => {},
-            .Rising => self.mY -= 1,
+            .Rising => self.mPos.y -= 1,
         }
 
         const everyNFrameRate = 5;
@@ -84,6 +85,6 @@ pub const Explosion = struct {
         };
 
         // NOTE: Subtracting half w/h this way placement is centered for the explosion.
-        drw.drawTextureScaled(self.mX - hw, self.mY - hh, self.mTexture, view, 2.0, c.WHITE);
+        drw.drawTextureScaled(self.mPos.x - hw, self.mPos.y - hh, self.mTexture, view, 2.0, c.WHITE);
     }
 };

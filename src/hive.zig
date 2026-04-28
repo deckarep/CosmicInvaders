@@ -20,12 +20,10 @@ pub const HiveState = enum {
 
 pub const InvaderSwaps = struct {
     a: ?*inv.Invader = undefined,
-    aX: f32 = 0,
-    aY: f32 = 0,
+    aPos: c.Vector2 = .{ .x = 0, .y = 0 },
 
     b: ?*inv.Invader = undefined,
-    bX: f32 = 0,
-    bY: f32 = 0,
+    bPos: c.Vector2 = .{ .x = 0, .y = 0 },
 };
 
 pub const Hive = struct {
@@ -74,8 +72,10 @@ pub const Hive = struct {
                 const invID = inv.newID();
                 try self.mInvaders.append(self.mAllocator, inv.Invader{
                     .mID = invID,
-                    .mX = xOffset + ((inv.InvWidth + invXPadding) * @as(f32, @floatFromInt(x))),
-                    .mY = yOffset + ((inv.InvHeight + invYPadding) * @as(f32, @floatFromInt(y))),
+                    .mPos = .{
+                        .x = xOffset + ((inv.InvWidth + invXPadding) * @as(f32, @floatFromInt(x))),
+                        .y = yOffset + ((inv.InvHeight + invYPadding) * @as(f32, @floatFromInt(y))),
+                    },
                 });
 
                 // track active invaders!
@@ -109,12 +109,10 @@ pub const Hive = struct {
         }
 
         self.mInvaderSwaps.a = &self.mInvaders.items[a_idx];
-        self.mInvaderSwaps.aX = self.mInvaderSwaps.a.?.mX;
-        self.mInvaderSwaps.aY = self.mInvaderSwaps.a.?.mY;
+        self.mInvaderSwaps.aPos = self.mInvaderSwaps.a.?.mPos;
 
         self.mInvaderSwaps.b = &self.mInvaders.items[b_idx];
-        self.mInvaderSwaps.bX = self.mInvaderSwaps.b.?.mX;
-        self.mInvaderSwaps.bY = self.mInvaderSwaps.b.?.mY;
+        self.mInvaderSwaps.bPos = self.mInvaderSwaps.b.?.mPos;
     }
 
     pub fn isInvaderIdActive(self: Self, id: ?usize) bool {
@@ -163,25 +161,27 @@ pub const Hive = struct {
             const currInv = self.mInvaders.items[len - 1];
             if (currInv.dead()) {
                 // When invader is dead, spawn a poof explosion as well as a -1 red mini score.
-                try state.mGame.spawnPoofExplosion(currInv.mX, currInv.mY);
+                try state.mGame.spawnPoofExplosion(currInv.mPos.x, currInv.mPos.y);
 
                 switch (currInv.mDeathReason.?) {
                     .HitGround => {
                         std.debug.print("culling invader id:{d} due to hitting ground\n", .{currInv.mID});
-                        try state.mGame.spawnMiniRedFloatingScore("-1", currInv.mX, currInv.mY);
+                        try state.mGame.spawnMiniRedFloatingScore("-1", currInv.mPos.x, currInv.mPos.y);
                         state.mGame.beginShake();
                     },
                     .HitWeaponStation => {
                         std.debug.print("culling invader id:{d} due to hitting a weapon station\n", .{currInv.mID});
-                        try state.mGame.spawnMiniRedFloatingScore("-10", currInv.mX, currInv.mY);
+                        try state.mGame.spawnMiniRedFloatingScore("-10", currInv.mPos.x, currInv.mPos.y);
                         state.mGame.beginShake();
                     },
                     .LighteningProjectile, .CanonProjectile, .MissileProjectile => {
                         std.debug.print("culling invader id:{d} due to player projectile\n", .{currInv.mID});
-                        try state.mGame.spawnSmallWhiteFloatingScore("+20", currInv.mX, currInv.mY);
+                        try state.mGame.spawnSmallWhiteFloatingScore("+20", currInv.mPos.x, currInv.mPos.y);
                         if (currInv.mDeathReason) |reason| {
                             if (reason == .MissileProjectile) {
-                                try state.mGame.spawnFieryExplosion(currInv.mX, currInv.mY);
+                                try state.mGame.spawnFieryExplosion(currInv.mPos.x, currInv.mPos.y);
+                                // TODO: perhaps explosion should be responsible for dispatching it's own sound effect???
+                                c.PlaySound(res.Resources.Sfx.Explosion);
                             }
                         }
                     },
@@ -217,21 +217,21 @@ pub const Hive = struct {
 
         for (self.mInvaders.items) |*in| {
             // Capture x-axis bounds.
-            if (in.mX < minX) {
-                minX = in.mX;
+            if (in.mPos.x < minX) {
+                minX = in.mPos.x;
             }
             // NOTE: the right side of the bounds should also include the width of the invader.
-            if (in.mX + inv.InvWidth > maxX) {
-                maxX = in.mX + inv.InvWidth;
+            if (in.mPos.x + inv.InvWidth > maxX) {
+                maxX = in.mPos.x + inv.InvWidth;
             }
 
             // Capture y-axis bounds.
-            if (in.mY < minY) {
-                minY = in.mY;
+            if (in.mPos.y < minY) {
+                minY = in.mPos.y;
             }
             // NOTE: the right side of the bounds should also include the height of the invader.
-            if (in.mY + inv.InvHeight > maxY) {
-                maxY = in.mY + inv.InvHeight;
+            if (in.mPos.y + inv.InvHeight > maxY) {
+                maxY = in.mPos.y + inv.InvHeight;
             }
         }
 
@@ -307,7 +307,7 @@ pub const Hive = struct {
                     self.mState = .Descending;
                 } else {
                     for (self.mInvaders.items) |*in| {
-                        in.mX += self.mHorizontalSpeed * self.mDirection;
+                        in.mPos.x += self.mHorizontalSpeed * self.mDirection;
 
                         // Check on any collisions for this invader.
                         if (self.checkInvaderCollided(in)) {
@@ -335,7 +335,7 @@ pub const Hive = struct {
             },
             .Descending => {
                 for (self.mInvaders.items) |*in| {
-                    in.mY += self.mDescendingSpeed;
+                    in.mPos.y += self.mDescendingSpeed;
 
                     // Check on any collisions for this invader.
                     if (self.checkInvaderCollided(in)) {
@@ -357,30 +357,30 @@ pub const Hive = struct {
                 const easeFn = esngs.easeInOutCubic;
 
                 // Move Invader A
-                invA.mX = easeFn(
+                invA.mPos.x = easeFn(
                     @floatFromInt(self.mStateFrames),
-                    is.aX,
-                    is.bX - is.aX,
+                    is.aPos.x,
+                    is.bPos.x - is.aPos.x,
                     @floatFromInt(30),
                 );
-                invA.mY = easeFn(
+                invA.mPos.y = easeFn(
                     @floatFromInt(self.mStateFrames),
-                    is.aY,
-                    is.bY - is.aY,
+                    is.aPos.y,
+                    is.bPos.y - is.aPos.y,
                     @floatFromInt(30),
                 );
 
                 // Move Invader B
-                invB.mX = easeFn(
+                invB.mPos.x = easeFn(
                     @floatFromInt(self.mStateFrames),
-                    is.bX,
-                    is.aX - is.bX,
+                    is.bPos.x,
+                    is.aPos.x - is.bPos.x,
                     @floatFromInt(30),
                 );
-                invB.mY = easeFn(
+                invB.mPos.y = easeFn(
                     @floatFromInt(self.mStateFrames),
-                    is.bY,
-                    is.aY - is.bY,
+                    is.bPos.y,
+                    is.aPos.y - is.bPos.y,
                     @floatFromInt(30),
                 );
 
@@ -394,7 +394,7 @@ pub const Hive = struct {
                 const invTotal = self.mInvaders.items.len - 1;
                 const randInvIdx: usize = @intCast(c.GetRandomValue(0, @intCast(invTotal)));
                 const selectedInv = self.mInvaders.items[randInvIdx];
-                const p = try pj.AlienBullet.create(selectedInv.mX, selectedInv.mY, self.mAllocator);
+                const p = try pj.AlienBullet.create(selectedInv.mPos.x, selectedInv.mPos.y, self.mAllocator);
                 const bullet = p.asProjectile();
                 try state.mGame.mEnemyProjectiles.append(self.mAllocator, bullet);
 

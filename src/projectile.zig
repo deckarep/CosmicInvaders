@@ -276,14 +276,14 @@ pub const MissileProj = struct {
         // 1. If we're already tracking an active invader, use its position for targeting.
         if (self.isTrackingInvaderActive(self.mInvaderIDToSeek)) {
             if (hive.getInvaderById(self.mInvaderIDToSeek)) |i| {
-                return .{ .x = i.mX, .y = i.mY };
+                return i.getPos();
             }
         } else {
             // 2. If we're not, attempt to track one and use its position for targeting.
             self.findInvaderToSeek();
             if (self.mInvaderIDToSeek) |invID| {
                 const i = hive.getInvaderById(invID).?;
-                return .{ .x = i.mX, .y = i.mY };
+                return i.getPos();
             }
         }
 
