@@ -21,8 +21,7 @@ pub const WaveBannerState = enum {
 };
 
 pub const WaveBanner = struct {
-    mX: f32 = conf.WIN_WIDTH / 2.0,
-    mY: f32 = 0,
+    mPos: c.Vector2 = .{ .x = conf.WIN_WIDTH / 2.0, .y = 0 },
 
     mXScale: f32 = 1.0,
     mYScale: f32 = 0.0,
@@ -101,11 +100,11 @@ pub const WaveBanner = struct {
         switch (self.mState) {
             .Initial => {
                 self.mYScale = 0.0;
-                self.mY = 0;
+                self.mPos.y = 0;
                 self.mStateFrames = 0;
             },
             .FlyDown => {
-                self.mY = esngs.easeOutQuart(
+                self.mPos.y = esngs.easeOutQuart(
                     @floatFromInt(self.mStateFrames),
                     @floatFromInt(initialPos),
                     @floatFromInt(destPos),
@@ -142,7 +141,7 @@ pub const WaveBanner = struct {
             .FlyUp => {
                 const start = destPos;
                 const end = -40 - start;
-                self.mY = esngs.easeOutCubic(
+                self.mPos.y = esngs.easeOutCubic(
                     @floatFromInt(self.mStateFrames),
                     @floatFromInt(start),
                     @floatFromInt(end),
@@ -169,7 +168,7 @@ pub const WaveBanner = struct {
                 // With render texture everything has to be negated.
                 c.Vector2{
                     .x = (-conf.WIN_WIDTH / 2.0) + (@as(f32, rtWidth) / 2.0),
-                    .y = -self.mY,
+                    .y = -self.mPos.y,
                 },
                 0,
                 c.WHITE,
