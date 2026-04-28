@@ -86,8 +86,10 @@ pub const GameState = struct {
             const stationKinds = [_]wp.WeaponStationKind{ .Canon, .RocketLauncher };
             const chosenKind = stationKinds[@as(usize, @intCast(c.GetRandomValue(0, 1)))];
             tmp = wp.WeaponStation.create(chosenKind);
-            tmp.mX = @floatFromInt(c.GetRandomValue(0, conf.WIN_WIDTH - 38));
-            tmp.mY = 372;
+            tmp.mPos = .{
+                .x = @floatFromInt(c.GetRandomValue(0, conf.WIN_WIDTH - 38)),
+                .y = 372,
+            };
             const tmpBounds = tmp.getBounds();
 
             for (self.mWeaponStations.items) |*ws| {
@@ -345,14 +347,14 @@ pub const GameState = struct {
         ));
     }
 
-    pub fn spawnCanonBullet(self: *Self, x: f32, y: f32) !void {
-        const cBullet = try pjc.CanonBullet.create(x, y, self.mAllocator);
+    pub fn spawnCanonBullet(self: *Self, pos: c.Vector2) !void {
+        const cBullet = try pjc.CanonBullet.create(pos, self.mAllocator);
         const p = cBullet.asProjectile();
         try self.mPlayerProjectiles.append(self.mAllocator, p);
     }
 
-    pub fn spawnMissileProjectile(self: *Self, x: f32, y: f32) !void {
-        const missileProj = try pjm.MissileProj.create(x, y, 0.0, self.mAllocator);
+    pub fn spawnMissileProjectile(self: *Self, pos: c.Vector2) !void {
+        const missileProj = try pjm.MissileProj.create(pos, 0.0, self.mAllocator);
         const p = missileProj.asProjectile();
         try self.mPlayerProjectiles.append(self.mAllocator, p);
     }

@@ -12,10 +12,10 @@ pub const InvaderBullet = struct {
 
     const Self = @This();
 
-    pub fn create(x: f32, y: f32, allocator: std.mem.Allocator) !*Self {
+    pub fn create(pos: c.Vector2, allocator: std.mem.Allocator) !*Self {
         const bullet = try allocator.create(Self);
-        bullet.base.init(.AlienBullet, x, y, allocator);
-        bullet.mfixedX = x; // <-- anchor around this x.
+        bullet.base.init(.AlienBullet, pos, allocator);
+        bullet.mfixedX = pos.x; // <-- anchor around this x.
         return bullet;
     }
 

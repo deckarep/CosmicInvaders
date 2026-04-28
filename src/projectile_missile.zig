@@ -19,9 +19,9 @@ pub const MissileProj = struct {
     const Self = @This();
     const PlumeEveryNFrames = 10;
 
-    pub fn create(x: f32, y: f32, rot: f32, allocator: std.mem.Allocator) !*Self {
+    pub fn create(pos: c.Vector2, rot: f32, allocator: std.mem.Allocator) !*Self {
         const missile = try allocator.create(Self);
-        missile.base.init(.Missile, x, y, allocator);
+        missile.base.init(.Missile, pos, allocator);
         missile.mRotation = rot;
         missile.mSpeed = @floatFromInt(c.GetRandomValue(60, 75));
         missile.mPlumeCooldown = PlumeEveryNFrames; // config this

@@ -23,8 +23,7 @@ pub const StationCondition = enum(u8) {
 pub const WeaponStation = struct {
     mKind: WeaponStationKind,
     mCondition: StationCondition = .Normal,
-    mX: f32 = 180,
-    mY: f32 = 372,
+    mPos: c.Vector2 = .{ .x = 180, .y = 372 },
     mHealth: u8 = 100, // express as percent or some other unit?
     mFireCountdown: usize = 0,
     mFrameIdx: usize = 0,
@@ -63,8 +62,8 @@ pub const WeaponStation = struct {
                         }
                     },
                     .Firing => {
-                        const x = self.mX + ((29 * 2) / 2);
-                        try state.mGame.spawnCanonBullet(x, self.mY);
+                        const x = self.mPos.x + ((29 * 2) / 2);
+                        try state.mGame.spawnCanonBullet(.{ .x = x, .y = self.mPos.y });
                         c.PlaySound(res.Resources.Sfx.LaserFire);
                         self.mFireCountdown = conf.CanonCooldown;
                         self.mFrameIdx += 1;
@@ -86,7 +85,7 @@ pub const WeaponStation = struct {
                         const wsBounds = self.getBounds();
                         const x = c.GetRandomValue(0, @intFromFloat(wsBounds.width));
                         const y = c.GetRandomValue(0, @intFromFloat(wsBounds.height));
-                        try state.mGame.spawnFieryExplosion(.{ .x = self.mX + @as(f32, @floatFromInt(x)), .y = self.mY + @as(f32, @floatFromInt(y)) });
+                        try state.mGame.spawnFieryExplosion(.{ .x = self.mPos.x + @as(f32, @floatFromInt(x)), .y = self.mPos.y + @as(f32, @floatFromInt(y)) });
                         state.mGame.beginShake();
                         self.mCondition = .Dead;
                     },
@@ -112,8 +111,8 @@ pub const WeaponStation = struct {
                         }
                     },
                     .Firing => {
-                        const x = self.mX + ((29 * 2) / 2);
-                        try state.mGame.spawnMissileProjectile(x, self.mY);
+                        const x = self.mPos.x + ((29 * 2) / 2);
+                        try state.mGame.spawnMissileProjectile(.{ .x = x, .y = self.mPos.y });
                         // TODO: use a more appropriate sound effect instead of laser
                         c.PlaySound(res.Resources.Sfx.Missile);
                         self.mFireCountdown = conf.RocketLauncherCooldown;
@@ -170,8 +169,8 @@ pub const WeaponStation = struct {
         };
 
         return .{
-            .x = self.mX,
-            .y = self.mY,
+            .x = self.mPos.x,
+            .y = self.mPos.y,
             .width = wh.x * scale,
             .height = wh.y * scale,
         };
@@ -287,8 +286,8 @@ pub const WeaponStation = struct {
 
                 const view = c.Rectangle{ .x = @as(f32, @floatFromInt(self.mFrameIdx)) * w, .y = 0, .width = w, .height = h };
                 drw.drawTextureScaled(
-                    self.mX,
-                    self.mY,
+                    self.mPos.x,
+                    self.mPos.y,
                     res.Resources.Canon,
                     view,
                     2.0,

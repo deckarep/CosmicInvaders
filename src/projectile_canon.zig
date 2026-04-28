@@ -9,9 +9,9 @@ pub const CanonBullet = struct {
 
     const Self = @This();
 
-    pub fn create(x: f32, y: f32, allocator: std.mem.Allocator) !*Self {
+    pub fn create(pos: c.Vector2, allocator: std.mem.Allocator) !*Self {
         const bullet = try allocator.create(Self);
-        bullet.base.init(.Canon, x, y, allocator);
+        bullet.base.init(.Canon, pos, allocator);
         return bullet;
     }
 

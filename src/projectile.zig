@@ -68,10 +68,10 @@ pub const BaseProjectile = struct {
 
     const Self = @This();
 
-    pub inline fn init(self: *Self, kind: ProjKind, x: f32, y: f32, allocator: std.mem.Allocator) void {
+    pub inline fn init(self: *Self, kind: ProjKind, pos: c.Vector2, allocator: std.mem.Allocator) void {
         self.mAllocator = allocator;
         self.mKind = kind;
-        self.mPos = .{ .x = x, .y = y };
+        self.mPos = pos;
         self.mDead = false;
     }
 

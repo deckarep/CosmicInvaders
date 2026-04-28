@@ -395,7 +395,7 @@ pub const Hive = struct {
                 const invTotal = self.mInvaders.items.len - 1;
                 const randInvIdx: usize = @intCast(c.GetRandomValue(0, @intCast(invTotal)));
                 const selectedInv = self.mInvaders.items[randInvIdx];
-                const p = try pji.InvaderBullet.create(selectedInv.mPos.x, selectedInv.mPos.y, self.mAllocator);
+                const p = try pji.InvaderBullet.create(selectedInv.mPos, self.mAllocator);
                 const bullet = p.asProjectile();
                 try state.mGame.mEnemyProjectiles.append(self.mAllocator, bullet);
 
