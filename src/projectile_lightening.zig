@@ -52,14 +52,18 @@ pub const LigteningStrike = struct {
         // 1. If we're already tracking an active invader, use its position for targeting.
         if (self.isTrackingInvaderActive(self.mInvaderIDToSeek)) {
             if (hive.getInvaderById(self.mInvaderIDToSeek)) |i| {
-                return i.getPos();
+                const p = i.getPos();
+                const b = i.getBounds();
+                return .{ .x = p.x + b.width / 2.0, .y = p.y + b.height / 2.0 };
             }
         } else {
             // 2. If we're not, attempt to track one and use its position for targeting.
             self.findInvaderToSeek();
             if (self.mInvaderIDToSeek) |invID| {
                 const i = hive.getInvaderById(invID).?;
-                return i.getPos();
+                const p = i.getPos();
+                const b = i.getBounds();
+                return .{ .x = p.x + b.width / 2.0, .y = p.y + b.height / 2.0 };
             }
         }
 
