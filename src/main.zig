@@ -166,6 +166,11 @@ fn draw() !void {
     // Anything drawn in here, will shake.
     try state.mGame.draw();
 
+    // drawLighteningStrike(
+    //     .{ .x = 20, .y = 80 },
+    //     .{ .x = conf.WIN_WIDTH / 2, .y = conf.WIN_HEIGHT / 2 },
+    // );
+
     defer if (isShaking) {
         outShakeScope();
     };
@@ -176,28 +181,26 @@ fn draw() !void {
     c.DrawFPS(10, conf.WIN_HEIGHT - 20);
 }
 
-fn drawLighteningStrike(fromX: i32, fromY: i32, toX: i32, toY: i32) void {
+fn drawLighteningStrike(begPos: c.Vector2, endPos: c.Vector2) void {
     const primaryColor = c.WHITE;
     const pixelSize = 2;
     const pixelVariationSize = 2;
 
-    var currentX: i32 = fromX;
-    var currentY: i32 = fromY;
+    var currentX: i32 = @intFromFloat(begPos.x);
+    var currentY: i32 = @intFromFloat(begPos.y);
 
-    const end = c.Vector2{ .x = @floatFromInt(toX), .y = @floatFromInt(toY) };
-
-    while (currentX != toX or currentY != toY) {
+    while (currentX != @as(i32, @intFromFloat(endPos.x)) or currentY != @as(i32, @intFromFloat(endPos.y))) {
         var smallestDistance: f32 = 2000.00;
         var bestX: i32 = currentX;
         var bestY: i32 = currentY;
 
         // Generate possible pairs.
-        for (0..4) |_| {
+        for (0..2) |_| {
             const tmpX = c.GetRandomValue(currentX - pixelVariationSize, currentX + pixelVariationSize);
             const tmpY = c.GetRandomValue(currentY - pixelVariationSize, currentY + pixelVariationSize);
 
             const candidate = c.Vector2{ .x = @floatFromInt(tmpX), .y = @floatFromInt(tmpY) };
-            const dist = c.Vector2Distance(candidate, end);
+            const dist = c.Vector2Distance(candidate, endPos);
 
             if (dist < smallestDistance) {
                 smallestDistance = dist;
@@ -215,14 +218,14 @@ fn drawLighteningStrike(fromX: i32, fromY: i32, toX: i32, toY: i32) void {
     }
 
     // Draw start
-    c.DrawRectangle(fromX - pixelSize, fromY, pixelSize, pixelSize, c.BLUE);
-    c.DrawRectangle(fromX, fromY, pixelSize, pixelSize, primaryColor);
-    c.DrawRectangle(fromX + pixelSize, fromY, pixelSize, pixelSize, c.BLUE);
+    // c.DrawRectangle(fromX - pixelSize, fromY, pixelSize, pixelSize, c.BLUE);
+    // c.DrawRectangle(fromX, fromY, pixelSize, pixelSize, primaryColor);
+    // c.DrawRectangle(fromX + pixelSize, fromY, pixelSize, pixelSize, c.BLUE);
 
     // Draw end
-    c.DrawRectangle(toX - pixelSize, toY, pixelSize, pixelSize, c.BLUE);
-    c.DrawRectangle(toX, toY, pixelSize, pixelSize, primaryColor);
-    c.DrawRectangle(toX + toY, currentY, pixelSize, pixelSize, c.BLUE);
+    // c.DrawRectangle(toX - pixelSize, toY, pixelSize, pixelSize, c.BLUE);
+    // c.DrawRectangle(toX, toY, pixelSize, pixelSize, primaryColor);
+    // c.DrawRectangle(toX + toY, currentY, pixelSize, pixelSize, c.BLUE);
 }
 
 fn regenAllBitmaps() !void {

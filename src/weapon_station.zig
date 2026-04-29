@@ -63,7 +63,8 @@ pub const WeaponStation = struct {
                     },
                     .Firing => {
                         const x = self.mPos.x + ((29 * 2) / 2);
-                        try state.mGame.spawnCanonBullet(.{ .x = x, .y = self.mPos.y });
+                        try state.mGame.spawnLighteningStrike(.{ .x = x, .y = self.mPos.y });
+                        //try state.mGame.spawnCanonBullet(.{ .x = x, .y = self.mPos.y });
                         c.PlaySound(res.Resources.Sfx.LaserFire);
                         self.mFireCountdown = conf.CanonCooldown;
                         self.mFrameIdx += 1;
@@ -293,41 +294,27 @@ pub const WeaponStation = struct {
                     2.0,
                     c.WHITE,
                 );
-
-                // Draw low damage puff indicator when health is below threshold.
-                self.drawSmokePlume(bounds);
-
-                // Draw health box.
-                self.drawHealthBar(bounds);
-
-                // Draw hit box
-                c.DrawRectangleLines(
-                    @intFromFloat(bounds.x),
-                    @intFromFloat(bounds.y),
-                    @intFromFloat(bounds.width),
-                    @intFromFloat(bounds.height),
-                    c.RED,
-                );
             },
             .RocketLauncher => {
-                // Draw low damage puff indicator when health is below threshold.
-                self.drawSmokePlume(bounds);
-
-                // Draw health box.
-                self.drawHealthBar(bounds);
-
-                // Draw hit box
-                c.DrawRectangleLines(
-                    @intFromFloat(bounds.x),
-                    @intFromFloat(bounds.y),
-                    @intFromFloat(bounds.width),
-                    @intFromFloat(bounds.height),
-                    c.RED,
-                );
+                // todo
             },
             .TeslaCoil => {
                 // TODO
             },
         }
+        // Draw low damage puff indicator when health is below threshold.
+        self.drawSmokePlume(bounds);
+
+        // Draw health box.
+        self.drawHealthBar(bounds);
+
+        // Draw hit box
+        c.DrawRectangleLines(
+            @intFromFloat(bounds.x),
+            @intFromFloat(bounds.y),
+            @intFromFloat(bounds.width),
+            @intFromFloat(bounds.height),
+            c.RED,
+        );
     }
 };

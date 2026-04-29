@@ -3,6 +3,7 @@ const hive = @import("hive.zig");
 const pj = @import("projectile.zig");
 const pjc = @import("projectile_canon.zig");
 const pjm = @import("projectile_missile.zig");
+const pjl = @import("projectile_lightening.zig");
 const exp = @import("explosion.zig");
 const cld = @import("cloud.zig");
 const conf = @import("conf.zig");
@@ -356,6 +357,12 @@ pub const GameState = struct {
     pub fn spawnMissileProjectile(self: *Self, pos: c.Vector2) !void {
         const missileProj = try pjm.MissileProj.create(pos, 0.0, self.mAllocator);
         const p = missileProj.asProjectile();
+        try self.mPlayerProjectiles.append(self.mAllocator, p);
+    }
+
+    pub fn spawnLighteningStrike(self: *Self, pos: c.Vector2) !void {
+        const strike = try pjl.LigteningStrike.create(pos, self.mAllocator);
+        const p = strike.asProjectile();
         try self.mPlayerProjectiles.append(self.mAllocator, p);
     }
 };

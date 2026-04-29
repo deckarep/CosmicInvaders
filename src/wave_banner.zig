@@ -23,6 +23,7 @@ pub const WaveBannerState = enum {
 pub const WaveBanner = struct {
     mPos: c.Vector2 = .{ .x = conf.WIN_WIDTH / 2.0, .y = 0 },
 
+    // TODO: these two fields can be a vector2 as well.
     mXScale: f32 = 1.0,
     mYScale: f32 = 0.0,
 
