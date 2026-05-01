@@ -94,6 +94,15 @@ pub const LigteningStrike = struct {
         if (self.mLifetime > 0) {
             self.mLifetime -= 1;
         } else {
+            // 4. Right before death, if we locked onto an Invader, process it as a hit.
+            if (self.mInvaderIDToSeek) |id| {
+                const hive = &state.mGame.mHive;
+                // Must get a fresh pointer to invader, it could have been destroyed.
+                if (hive.getInvaderById(id)) |i| {
+                    const strikeProj = self.asProjectile();
+                    i.forceHit(strikeProj);
+                }
+            }
             self.base.mDead = true;
         }
     }

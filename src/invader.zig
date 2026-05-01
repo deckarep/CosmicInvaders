@@ -130,7 +130,32 @@ pub const Invader = struct {
         return self.mDeathReason != null;
     }
 
-    pub fn checkHit(self: *Self, proj: *pj.Proj) bool {
+    pub fn analyzeReason(self: *Self, proj: pj.Proj) void {
+        if (self.mHits == 0) {
+            switch (proj.getKind()) {
+                .Missile => self.mDeathReason = .MissileProjectile,
+                .Canon => self.mDeathReason = .CanonProjectile,
+                .Lightening => self.mDeathReason = .LighteningProjectile,
+                else => {},
+            }
+        }
+    }
+
+    pub fn forceHit(self: *Self, proj: pj.Proj) void {
+        switch (proj.getKind()) {
+            .Lightening => {
+                if (self.mHits > 0) self.mHits -= 1;
+
+                // Put invader into damaged mode.
+                self.mState = .Damaged;
+
+                self.analyzeReason(proj);
+            },
+            else => {},
+        }
+    }
+
+    pub fn checkHit(self: *Self, proj: pj.Proj) bool {
         const invBounds = self.getBounds();
         const projBounds = proj.getBounds();
 
@@ -141,14 +166,7 @@ pub const Invader = struct {
             // Put the invader into damaged mode.
             self.mState = .Damaged;
 
-            if (self.mHits == 0) {
-                switch (proj.getKind()) {
-                    .Missile => self.mDeathReason = .MissileProjectile,
-                    .Canon => self.mDeathReason = .CanonProjectile,
-                    .Lightening => self.mDeathReason = .LighteningProjectile,
-                    else => {},
-                }
-            }
+            self.analyzeReason(proj);
         }
 
         return collided;
