@@ -31,5 +31,5 @@ pub const AttackCooldown = 60;
 pub const SwapCooldown = 120;
 pub const HiveRespawnCooldown = 60 * 2;
 pub const CanonCooldown = 300;
-pub const TeslaCoilCooldown = 30;
+pub const TeslaCoilCooldown = 450;
 pub const RocketLauncherCooldown = 240;

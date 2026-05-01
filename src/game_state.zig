@@ -84,8 +84,8 @@ pub const GameState = struct {
         while (true) {
             var haveCollision = false;
 
-            const stationKinds = [_]wp.WeaponStationKind{ .Canon, .RocketLauncher };
-            const chosenKind = stationKinds[@as(usize, @intCast(c.GetRandomValue(0, 1)))];
+            const stationKinds = [_]wp.WeaponStationKind{ .Canon, .RocketLauncher, .TeslaCoil };
+            const chosenKind = stationKinds[@as(usize, @intCast(c.GetRandomValue(0, stationKinds.len - 1)))];
             tmp = wp.WeaponStation.create(chosenKind);
             tmp.mPos = .{
                 .x = @floatFromInt(c.GetRandomValue(0, conf.WIN_WIDTH - 38)),

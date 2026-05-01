@@ -63,8 +63,8 @@ pub const WeaponStation = struct {
                     },
                     .Firing => {
                         const x = self.mPos.x + ((29 * 2) / 2);
-                        try state.mGame.spawnLighteningStrike(.{ .x = x, .y = self.mPos.y });
-                        //try state.mGame.spawnCanonBullet(.{ .x = x, .y = self.mPos.y });
+                        //try state.mGame.spawnLighteningStrike(.{ .x = x, .y = self.mPos.y });
+                        try state.mGame.spawnCanonBullet(.{ .x = x, .y = self.mPos.y });
                         c.PlaySound(res.Resources.Sfx.LaserFire);
                         self.mFireCountdown = conf.CanonCooldown;
                         self.mFrameIdx += 1;
@@ -139,12 +139,51 @@ pub const WeaponStation = struct {
             },
             .TeslaCoil => {
                 switch (self.mCondition) {
-                    .Normal => {},
-                    .Firing => {},
-                    .Hit => {},
-                    .Hit2 => {},
-                    .Collapsing => {},
-                    .Dead => {},
+                    .Normal => {
+                        // Should we be collapsing?
+                        if (self.mHealth <= 0) {
+                            self.mCondition = .Collapsing;
+                            return;
+                        }
+
+                        // Should we be firing?
+                        if (self.mFireCountdown > 0) self.mFireCountdown -= 1;
+                        const shouldFire = self.mFireCountdown == 0;
+                        if (shouldFire) {
+                            self.mCondition = .Firing;
+                        }
+                    },
+                    .Firing => {
+                        const x = self.mPos.x + ((29 * 2) / 2);
+                        try state.mGame.spawnLighteningStrike(.{ .x = x, .y = self.mPos.y });
+                        c.PlaySound(res.Resources.Sfx.Strike);
+                        self.mFireCountdown = conf.TeslaCoilCooldown;
+                        self.mFrameIdx += 1;
+                        self.mCondition = .Normal;
+                        return;
+                    },
+                    .Hit => {
+                        self.mFrameIdx = 1;
+                        self.mCondition = .Hit2;
+                        return;
+                    },
+                    .Hit2 => {
+                        self.mFrameIdx = 1;
+                        self.mCondition = .Normal;
+                        return;
+                    },
+                    .Collapsing => {
+                        // Spawn an explosion in a random x/y coord within the bounds of the weapon station.
+                        const wsBounds = self.getBounds();
+                        const x = c.GetRandomValue(0, @intFromFloat(wsBounds.width));
+                        const y = c.GetRandomValue(0, @intFromFloat(wsBounds.height));
+                        try state.mGame.spawnFieryExplosion(.{ .x = self.mPos.x + @as(f32, @floatFromInt(x)), .y = self.mPos.y + @as(f32, @floatFromInt(y)) });
+                        state.mGame.beginShake();
+                        self.mCondition = .Dead;
+                    },
+                    .Dead => {
+                        // Nothing for now, but once in this state, this weapon station will be reaped!
+                    },
                 }
             },
         }
@@ -165,7 +204,7 @@ pub const WeaponStation = struct {
         const wh = switch (self.mKind) {
             .Canon => c.Vector2{ .x = 29, .y = 29 },
             // Below values are hardcoded for now.
-            .TeslaCoil => c.Vector2{ .x = 29, .y = 29 },
+            .TeslaCoil => c.Vector2{ .x = 22, .y = 21 },
             .RocketLauncher => c.Vector2{ .x = 29, .y = 29 },
         };
 
@@ -299,7 +338,18 @@ pub const WeaponStation = struct {
                 // todo
             },
             .TeslaCoil => {
-                // TODO
+                const w = 22;
+                const h = 21;
+
+                const view = c.Rectangle{ .x = @as(f32, @floatFromInt(self.mFrameIdx)) * w, .y = 0, .width = w, .height = h };
+                drw.drawTextureScaled(
+                    self.mPos.x,
+                    self.mPos.y,
+                    res.Resources.TeslaCoil,
+                    view,
+                    2.0,
+                    c.WHITE,
+                );
             },
         }
         // Draw low damage puff indicator when health is below threshold.

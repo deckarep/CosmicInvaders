@@ -13,6 +13,8 @@ pub const Resources = struct {
     pub var Clouds: [5]c.Texture = undefined;
     pub var AlienBullet: c.Texture = undefined;
 
+    pub var TeslaCoil: c.Texture = undefined;
+
     pub var Turret2: c.Texture = undefined;
     pub var Invader1: c.Texture = undefined;
 
@@ -43,6 +45,7 @@ pub const Resources = struct {
         pub var LaserHit: c.Sound = undefined;
         pub var Explosion: c.Sound = undefined;
         pub var Missile: c.Sound = undefined;
+        pub var Strike: c.Sound = undefined;
     };
 
     pub const Music = struct {
@@ -71,8 +74,9 @@ pub const Resources = struct {
         Resources.AlienBullet = loadTexture(ROOT_PATH ++ "alienbullet.sz.png");
 
         // Weapons
-        Resources.Turret2 = loadTexture(ROOT_PATH ++ "turret2.mz.png");
         Resources.Canon = loadTexture(ROOT_PATH ++ "turret1.sz.png");
+        Resources.Turret2 = loadTexture(ROOT_PATH ++ "turret2.mz.png");
+        Resources.TeslaCoil = loadTexture(ROOT_PATH ++ "turret3.mz.png");
         Resources.LaserSm = loadTexture(ROOT_PATH ++ "laser_small.mz.png");
         Resources.LaserMed = loadTexture(ROOT_PATH ++ "laser_medium.mz.png");
 
@@ -93,6 +97,7 @@ pub const Resources = struct {
         Resources.Sfx.LaserHit = loadSound(ROOT_PATH ++ "laserhit.wav");
         Resources.Sfx.Explosion = loadSound(ROOT_PATH ++ "boom1.wav");
         Resources.Sfx.Missile = loadSound(ROOT_PATH ++ "missile.wav");
+        Resources.Sfx.Strike = loadSound(ROOT_PATH ++ "prow.wav");
     }
 
     fn loadTexture(path: [:0]const u8) c.Texture {
@@ -139,6 +144,7 @@ pub const Resources = struct {
             unloadTexture(cloud.*);
         }
 
+        unloadTexture(Resources.TeslaCoil);
         unloadTexture(Resources.Turret2);
         unloadTexture(Resources.Background);
         unloadTexture(Resources.Invader1);
@@ -164,5 +170,6 @@ pub const Resources = struct {
         unloadSound(Resources.Sfx.LaserHit);
         unloadSound(Resources.Sfx.Explosion);
         unloadSound(Resources.Sfx.Missile);
+        unloadSound(Resources.Sfx.Strike);
     }
 };

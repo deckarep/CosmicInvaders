@@ -37,6 +37,8 @@ pub const LigteningStrike = struct {
     }
 
     fn findInvaderToSeek(self: *Self) void {
+        // TODO: Technically, lightening should target the closest threat!
+
         const id = state.mGame.mHive.getRandomInvaderId();
         if (id) |i| {
             self.mInvaderIDToSeek = i;
