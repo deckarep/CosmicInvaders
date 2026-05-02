@@ -84,7 +84,11 @@ pub const GameState = struct {
         while (true) {
             var haveCollision = false;
 
-            const stationKinds = [_]wp.WeaponStationKind{ .Canon, .RocketLauncher, .TeslaCoil };
+            const stationKinds = [_]wp.WeaponStationKind{
+                .TeslaCoil,
+                //.Canon,
+                //.RocketLauncher,
+            };
             const chosenKind = stationKinds[@as(usize, @intCast(c.GetRandomValue(0, stationKinds.len - 1)))];
             tmp = wp.WeaponStation.create(chosenKind);
             tmp.mPos = .{
@@ -186,12 +190,19 @@ pub const GameState = struct {
                 // 2.b Find out which invader was hit.
                 var anyInvadersDead = false;
                 for (self.mHive.mInvaders.items) |*inv| {
+                    var somethingHit = false;
                     if (inv.checkHit(currProj)) {
+                        // TODO: instead of play sound here call
+                        // currProj.doHitSound();
                         c.PlaySound(res.Resources.Sfx.LaserHit);
                         currProj.markDead();
+                        somethingHit = true;
                     }
                     if (inv.dead()) {
                         anyInvadersDead = true;
+                    }
+                    if (somethingHit) {
+                        break;
                     }
                 }
                 if (anyInvadersDead) {

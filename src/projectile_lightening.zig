@@ -19,6 +19,7 @@ pub const LigteningStrike = struct {
         strike.base.init(.Lightening, pos, allocator);
         strike.mLifetime = 6;
         strike.mInvaderIDToSeek = null;
+        strike.mTargetPos = .{};
         return strike;
     }
 
@@ -86,23 +87,15 @@ pub const LigteningStrike = struct {
         // 2. Seek an invader.
         target = self.seekInvader(target);
 
+        // 3. If we couldn't seek out an invader, just return.
         if (self.mInvaderIDToSeek == null) return;
 
-        // 3. Capture the target for usage in draw.
+        // 4. Capture the target for usage in draw.
         self.mTargetPos = target;
 
         if (self.mLifetime > 0) {
             self.mLifetime -= 1;
         } else {
-            // 4. Right before death, if we locked onto an Invader, process it as a hit.
-            if (self.mInvaderIDToSeek) |id| {
-                const hive = &state.mGame.mHive;
-                // Must get a fresh pointer to invader, it could have been destroyed.
-                if (hive.getInvaderById(id)) |i| {
-                    const strikeProj = self.asProjectile();
-                    i.forceHit(strikeProj);
-                }
-            }
             self.base.mDead = true;
         }
     }
@@ -113,6 +106,16 @@ pub const LigteningStrike = struct {
         if (self.mInvaderIDToSeek == null) return;
 
         drw.drawLighteningStrike(self.base.mPos, self.mTargetPos);
+
+        // Draw red bounding box.
+        const bnds = getBounds(ptr);
+        c.DrawRectangleLines(
+            @intFromFloat(bnds.x),
+            @intFromFloat(bnds.y),
+            @intFromFloat(bnds.width),
+            @intFromFloat(bnds.height),
+            c.RED,
+        );
     }
 
     pub fn markDead(ptr: *anyopaque) void {
@@ -133,11 +136,41 @@ pub const LigteningStrike = struct {
     pub fn getBounds(ptr: *anyopaque) c.Rectangle {
         const self: *Self = @ptrCast(@alignCast(ptr));
 
+        if (self.mLifetime <= 0) {
+            if (self.mInvaderIDToSeek) |id| {
+                if (state.mGame.mHive.getInvaderById(id)) |i| {
+                    // On the zero mLifetime frame, the bounds are
+                    // simply the invader we're operating on.
+                    return i.getBounds();
+
+                    // NOTE: I'm not going to use this code, originally I was trying
+                    // to have the bounds be the entire lightening, but then too
+                    // many invaders collide.
+
+                    // const start = self.base.mPos;
+                    // const invBounds = i.getBounds();
+
+                    // const minX = @min(start.x, invBounds.x);
+                    // const minY = @min(start.y, invBounds.y);
+                    // const maxX = @max(start.x, invBounds.x + invBounds.width);
+                    // const maxY = @max(start.y, invBounds.y + invBounds.height);
+
+                    // return .{
+                    //     .x = minX,
+                    //     .y = minY,
+                    //     .width = maxX - minX,
+                    //     .height = maxY - minY,
+                    // };
+                }
+            }
+        }
+
+        // Normal bounds are down with the testla coil position.
         return c.Rectangle{
             .x = self.base.mPos.x,
             .y = self.base.mPos.y,
-            .width = 50, //HARDCODED
-            .height = 50,
+            .width = 10,
+            .height = 10,
         };
     }
 

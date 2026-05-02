@@ -158,7 +158,6 @@ pub const WeaponStation = struct {
                         try state.mGame.spawnLighteningStrike(.{ .x = x, .y = self.mPos.y });
                         c.PlaySound(res.Resources.Sfx.Strike);
                         self.mFireCountdown = conf.TeslaCoilCooldown;
-                        self.mFrameIdx += 1;
                         self.mCondition = .Normal;
                         return;
                     },
@@ -191,9 +190,17 @@ pub const WeaponStation = struct {
         // Currently hardcoded to advance frames for Canon.
         if (self.mFrameIdx != 0 and (state.mGame.mTicks % 5) == 0) {
             self.mFrameIdx += 1;
-            if (self.mFrameIdx > 4) {
+            if (self.mFrameIdx > self.getFramesMax()) {
                 self.mFrameIdx = 0;
             }
+        }
+    }
+
+    inline fn getFramesMax(self: Self) usize {
+        switch (self.mKind) {
+            .Canon => return 4,
+            .TeslaCoil => return 0,
+            else => return 1,
         }
     }
 

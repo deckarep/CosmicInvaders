@@ -118,6 +118,8 @@ pub fn main() !void {
         }
     };
 
+    try testAlignment(alloc);
+
     // const oop = @import("oop.zig");
     // try oop.testOop(alloc);
 
@@ -140,6 +142,34 @@ pub fn main() !void {
     while (!c.WindowShouldClose()) {
         try update();
         try draw();
+    }
+}
+
+// testAlignment has nothing to do with this game, but I was curious if alignment affects every field or just the starting address.
+// It affects just the starting address.
+fn testAlignment(a: std.mem.Allocator) !void {
+    var regularList: std.ArrayList(f32) = .empty;
+    defer regularList.deinit(a);
+    try regularList.append(a, 11);
+    try regularList.append(a, 22);
+    try regularList.append(a, 33);
+    try regularList.append(a, 44);
+    try regularList.append(a, 55);
+
+    for (regularList.items) |*item| {
+        std.debug.print("regularList: val({d})=>ptr({p})\n", .{ item.*, item });
+    }
+
+    var alignedList: std.array_list.Aligned(f32, std.mem.Alignment.@"64") = .empty;
+    defer alignedList.deinit(a);
+    try alignedList.append(a, 111);
+    try alignedList.append(a, 222);
+    try alignedList.append(a, 333);
+    try alignedList.append(a, 444);
+    try alignedList.append(a, 555);
+
+    for (alignedList.items) |*item| {
+        std.debug.print("alignedList: val({d})=>ptr({p})\n", .{ item.*, item });
     }
 }
 
