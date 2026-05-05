@@ -3,14 +3,17 @@ const std = @import("std");
 const res = @import("resources.zig");
 const drw = @import("draw.zig");
 const pj = @import("projectile.zig");
+const conf = @import("conf.zig");
 
 pub const CanonBullet = struct {
     base: pj.BaseProjectile,
+    mSpeedY: f32,
 
     const Self = @This();
 
     pub fn create(pos: c.Vector2, allocator: std.mem.Allocator) !*Self {
         const bullet = try allocator.create(Self);
+        bullet.mSpeedY = conf.CanonProjectileYSpeed;
         bullet.base.init(.Canon, pos, allocator);
         return bullet;
     }
@@ -26,7 +29,7 @@ pub const CanonBullet = struct {
 
         self.base.update();
 
-        self.base.mPos.y -= 6;
+        self.base.mPos.y -= self.mSpeedY * c.GetFrameTime();
     }
 
     pub fn draw(ptr: *anyopaque) anyerror!void {

@@ -1,6 +1,11 @@
 const std = @import("std");
 const c = @import("c");
 
+const zeroVec2 = c.Vector2{
+    .x = 0,
+    .y = 0,
+};
+
 pub fn drawTextureScaled(x: f32, y: f32, texture: c.Texture, view: c.Rectangle, scale: f32, color: c.Color) void {
     const src = c.Rectangle{
         .x = view.x,
@@ -19,7 +24,7 @@ pub fn drawTextureScaled(x: f32, y: f32, texture: c.Texture, view: c.Rectangle, 
         texture,
         src,
         dst,
-        c.Vector2{ .x = 0, .y = 0 },
+        zeroVec2,
         0,
         color,
     );

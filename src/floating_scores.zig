@@ -35,7 +35,7 @@ pub const FloatingScore = struct {
 
         switch (self.mKind) {
             .MiniRed, .SmallWhite => {
-                const movement = 4.0 * c.GetFrameTime();
+                const movement = conf.FloatingScoreMovementSpeed * c.GetFrameTime();
                 self.mPos.x += movement;
                 self.mPos.y -= movement;
             },

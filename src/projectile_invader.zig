@@ -30,7 +30,7 @@ pub const InvaderBullet = struct {
 
         self.base.update();
 
-        self.base.mPos.y += conf.EnemyProjectileYSpeed;
+        self.base.mPos.y += conf.EnemyProjectileYSpeed * c.GetFrameTime();
 
         const amplitude = 30.0;
         const frequency = 1.0 / 15.0; // adjust this to get the desired period

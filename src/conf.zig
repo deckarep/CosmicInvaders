@@ -24,7 +24,9 @@ pub const NumClouds = 6;
 pub const DescendCountdown = 10;
 pub const SwapEnabled = true;
 
-pub const EnemyProjectileYSpeed = 2;
+pub const EnemyProjectileYSpeed = 200;
+pub const CanonProjectileYSpeed = 600;
+pub const FloatingScoreMovementSpeed = 4.0;
 
 // Cooldowns
 pub const AttackCooldown = 60;
