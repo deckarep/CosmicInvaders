@@ -32,7 +32,7 @@ pub const LigteningStrike = struct {
         if (invID) |id| {
             return state.mGame.mHive.isInvaderIdActive(id);
         }
-        // It's not longer active so we must null it out.
+        // It's no longer active so we must null it out.
         self.mInvaderIDToSeek = null;
         return false;
     }
@@ -87,17 +87,21 @@ pub const LigteningStrike = struct {
         // 2. Seek an invader.
         target = self.seekInvader(target);
 
+        // 2.a We always want this to run even when no invader was seeked to.
+        // The reason is because otherwise the projectile is kind of "saved up/stalled" during the "wave n" period.
+        defer {
+            if (self.mLifetime > 0) {
+                self.mLifetime -= 1;
+            } else {
+                self.base.mDead = true;
+            }
+        }
+
         // 3. If we couldn't seek out an invader, just return.
         if (self.mInvaderIDToSeek == null) return;
 
         // 4. Capture the target for usage in draw.
         self.mTargetPos = target;
-
-        if (self.mLifetime > 0) {
-            self.mLifetime -= 1;
-        } else {
-            self.base.mDead = true;
-        }
     }
 
     pub fn draw(ptr: *anyopaque) anyerror!void {
