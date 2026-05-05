@@ -56,20 +56,8 @@ pub fn drawLighteningStrike(begPos: c.Vector2, endPos: c.Vector2) void {
         currentX = bestX;
         currentY = bestY;
 
-        //c.DrawRectangle(currentX - pixelSize, currentY, pixelSize, pixelSize, c.BLUE);
         c.DrawRectangle(currentX, currentY, pixelSize, pixelSize, primaryColor);
-        //c.DrawRectangle(currentX + pixelSize, currentY, pixelSize, pixelSize, c.BLUE);
     }
-
-    // Draw start
-    // c.DrawRectangle(fromX - pixelSize, fromY, pixelSize, pixelSize, c.BLUE);
-    // c.DrawRectangle(fromX, fromY, pixelSize, pixelSize, primaryColor);
-    // c.DrawRectangle(fromX + pixelSize, fromY, pixelSize, pixelSize, c.BLUE);
-
-    // Draw end
-    // c.DrawRectangle(toX - pixelSize, toY, pixelSize, pixelSize, c.BLUE);
-    // c.DrawRectangle(toX, toY, pixelSize, pixelSize, primaryColor);
-    // c.DrawRectangle(toX + toY, currentY, pixelSize, pixelSize, c.BLUE);
 }
 
 // NOTE: Probably going to delete this...as it's currently unfinished and unused and now
