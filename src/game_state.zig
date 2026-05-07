@@ -321,6 +321,10 @@ pub const GameState = struct {
         }
     }
 
+    pub fn isBannerVisible(self: Self) bool {
+        return self.mWaveBanner.mState != .Initial;
+    }
+
     pub fn beginShake(self: *Self) void {
         self.mShakeIntensity = conf.INITIAL_SHAKE_INTENSITY;
     }

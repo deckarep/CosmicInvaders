@@ -15,14 +15,22 @@ pub const Cloud = struct {
     const Self = @This();
 
     pub fn init(texture: c.Texture) Self {
-        return Self{ .mTexture = texture, .mXSpeed = @floatFromInt(c.GetRandomValue(1, 6)), .mPos = .{
-            .x = @floatFromInt(c.GetRandomValue(0, conf.WIN_WIDTH)),
-            .y = @floatFromInt(c.GetRandomValue(CloudMinY, CloudMaxY)),
-        } };
+        return Self{
+            .mTexture = texture,
+            .mXSpeed = @floatFromInt(c.GetRandomValue(conf.CloudMinXSpeed, conf.CloudMaxXSpeed)),
+            .mPos = .{
+                .x = @floatFromInt(c.GetRandomValue(0, conf.WIN_WIDTH)),
+                .y = @floatFromInt(c.GetRandomValue(CloudMinY, CloudMaxY)),
+            },
+        };
     }
 
     pub fn update(self: *Self) void {
-        self.mPos.x -= self.mXSpeed * c.GetFrameTime();
+        var additionalXSpeedFactor: f32 = 1.0;
+        if (state.mGame.isBannerVisible()) {
+            additionalXSpeedFactor = 100.0;
+        }
+        self.mPos.x -= (self.mXSpeed * additionalXSpeedFactor) * c.GetFrameTime();
 
         // The clouds move left, if they are past their width beyond 0, wrap them around.
         if (self.mPos.x < @as(f32, @floatFromInt(-self.mTexture.width)) * 2.0) {
